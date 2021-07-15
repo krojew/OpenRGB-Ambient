@@ -5,9 +5,15 @@
 #include "OpenRGBAmbientPlugin.h"
 
 OpenRGBPluginInfo OpenRGBAmbientPlugin::Initialize(bool dark_theme, ResourceManager *resource_manager_ptr) {
-    return OpenRGBPluginInfo();
+    return {
+            "OpenRGBAmbientPlugin",
+            "Desktop ambient light support",
+            "TopTabBar",
+            false,
+            new QLabel("Ambient")
+    };
 }
 
 QWidget *OpenRGBAmbientPlugin::CreateGUI(QWidget *parent) {
-    return nullptr;
+    return new QWidget{parent};
 }

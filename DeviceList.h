@@ -16,12 +16,11 @@ class DeviceList
         : public QWidget
 {
 public:
-    DeviceList(ResourceManager *resourceManager, Settings &settings, QWidget *parent);
+    DeviceList(ResourceManager *resourceManager, Settings &settings, QWidget *parent = nullptr);
     ~DeviceList() override = default;
 
-    void fillControllerList();
-
 public slots:
+    void fillControllerList();
     void saveCheckState(QListWidgetItem *item);
 
 private:

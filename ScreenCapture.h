@@ -20,7 +20,7 @@ public:
 
     bool grabContent();
 
-    std::shared_ptr<ID3D11Texture2D> getScreen() const;
+    [[nodiscard]] std::shared_ptr<ID3D11Texture2D> getScreen() const;
 
 private:
     std::shared_ptr<IDXGIFactory1> factory;

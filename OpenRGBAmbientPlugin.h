@@ -9,6 +9,8 @@
 #include <memory>
 #include <thread>
 
+#include <d3d11.h>
+
 #include <QObject>
 
 #include <OpenRGBPluginInterface.h>
@@ -30,14 +32,23 @@ public:
 
     QWidget *CreateGUI(QWidget *parent) override;
 
+public slots:
+    void setPreview(bool enabled);
+
+signals:
+    void previewUpdated(const QImage &image);
+
 private:
     ResourceManager *resourceManager = nullptr;
     std::unique_ptr<Settings> settings;
 
     std::atomic_bool stopFlag{false};
+    std::atomic_bool preview{false};
     std::thread captureThread;
 
     void startCapture();
+
+    void processImage(const std::shared_ptr<ID3D11Texture2D> &image);
 };
 
 #endif //OPENRGB_AMBIENT_OPENRGBAMBIENTPLUGIN_H

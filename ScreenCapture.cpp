@@ -4,16 +4,9 @@
 
 #include <stdexcept>
 
-#include "ScreenCapture.h"
+#include "ReleaseWrapper.h"
 
-namespace
-{
-    template <typename T>
-    std::shared_ptr<T> releasing(T* z)
-    {
-        return std::shared_ptr<T>(z, [](T *z) { z->Release(); });
-    }
-}
+#include "ScreenCapture.h"
 
 ScreenCapture::ScreenCapture()
 {

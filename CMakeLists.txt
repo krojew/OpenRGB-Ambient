@@ -11,7 +11,7 @@ set(QT_VERSION 5)
 set(REQUIRED_LIBS Core Gui Widgets)
 set(REQUIRED_LIBS_QUALIFIED Qt5::Core Qt5::Gui Qt5::Widgets)
 
-add_library(${PROJECT_NAME} SHARED OpenRGBAmbientPlugin.h OpenRGBAmbientPlugin.cpp)
+add_library(${PROJECT_NAME} SHARED OpenRGBAmbientPlugin.h OpenRGBAmbientPlugin.cpp DeviceList.cpp DeviceList.h Settings.cpp Settings.h)
 
 if (NOT CMAKE_PREFIX_PATH)
     message(WARNING "CMAKE_PREFIX_PATH is not defined, you may need to set it "
@@ -20,7 +20,7 @@ endif ()
 
 find_package(Qt${QT_VERSION} COMPONENTS ${REQUIRED_LIBS} REQUIRED)
 target_link_libraries(${PROJECT_NAME} ${REQUIRED_LIBS_QUALIFIED})
-target_include_directories(${PROJECT_NAME} PRIVATE OpenRGB OpenRGB/i2c_smbus OpenRGB/net_port OpenRGB/RGBController OpenRGB/dependencies/json OpenRGB/dependencies/ColorWheel OpenRGB/qt)
+target_include_directories(${PROJECT_NAME} PRIVATE OpenRGB OpenRGB/i2c_smbus OpenRGB/net_port OpenRGB/RGBController OpenRGB/dependencies/json OpenRGB/qt)
 
 if (WIN32)
     target_compile_definitions(${PROJECT_NAME} PRIVATE _MBCS WIN32 _CRT_SECURE_NO_WARNINGS _WINSOCK_DEPRECATED_NO_WARNINGS WIN32_LEAN_AND_MEAN)

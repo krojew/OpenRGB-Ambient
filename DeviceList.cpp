@@ -14,7 +14,7 @@
 
 DeviceList::DeviceList(ResourceManager *resourceManager, Settings &settings, QWidget *parent)
     : QWidget{parent}
-    , resourceManager(resourceManager)
+    , resourceManager{resourceManager}
     , settings{settings}
 {
     const auto layout = new QHBoxLayout{this};

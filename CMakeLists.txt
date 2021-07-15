@@ -11,7 +11,7 @@ set(QT_VERSION 5)
 set(REQUIRED_LIBS Core Gui Widgets)
 set(REQUIRED_LIBS_QUALIFIED Qt5::Core Qt5::Gui Qt5::Widgets)
 
-add_library(${PROJECT_NAME} SHARED OpenRGBAmbientPlugin.h OpenRGBAmbientPlugin.cpp DeviceList.cpp DeviceList.h Settings.cpp Settings.h)
+add_library(${PROJECT_NAME} SHARED OpenRGBAmbientPlugin.h OpenRGBAmbientPlugin.cpp DeviceList.cpp DeviceList.h Settings.cpp Settings.h ScreenCapture.cpp ScreenCapture.h Limiter.cpp Limiter.h)
 
 if (NOT CMAKE_PREFIX_PATH)
     message(WARNING "CMAKE_PREFIX_PATH is not defined, you may need to set it "
@@ -23,7 +23,13 @@ target_link_libraries(${PROJECT_NAME} ${REQUIRED_LIBS_QUALIFIED})
 target_include_directories(${PROJECT_NAME} PRIVATE OpenRGB OpenRGB/i2c_smbus OpenRGB/net_port OpenRGB/RGBController OpenRGB/dependencies/json OpenRGB/qt)
 
 if (WIN32)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE _MBCS WIN32 _CRT_SECURE_NO_WARNINGS _WINSOCK_DEPRECATED_NO_WARNINGS WIN32_LEAN_AND_MEAN)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE _MBCS WIN32 _CRT_SECURE_NO_WARNINGS _WINSOCKAPI_ _WINSOCK_DEPRECATED_NO_WARNINGS WIN32_LEAN_AND_MEAN)
+
+    find_library(D3D11_LIBRARY d3d11.lib PATHS "$ENV{DXSDK_DIR}/Lib/x86" "C:/Program Files (x86)/Microsoft DirectX SDK/Lib/x86")
+    target_link_libraries(${PROJECT_NAME} ${D3D11_LIBRARY})
+
+    find_library(DXGI_LIBRARY dxgi.lib PATHS "$ENV{DXSDK_DIR}/Lib/x86" "C:/Program Files (x86)/Microsoft DirectX SDK/Lib/x86")
+    target_link_libraries(${PROJECT_NAME} ${DXGI_LIBRARY})
 
     set(DEBUG_SUFFIX)
     if (CMAKE_BUILD_TYPE MATCHES "Debug")

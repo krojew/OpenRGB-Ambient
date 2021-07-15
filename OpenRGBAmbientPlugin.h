@@ -5,7 +5,9 @@
 #ifndef OPENRGB_AMBIENT_OPENRGBAMBIENTPLUGIN_H
 #define OPENRGB_AMBIENT_OPENRGBAMBIENTPLUGIN_H
 
+#include <atomic>
 #include <memory>
+#include <thread>
 
 #include <QObject>
 
@@ -22,7 +24,7 @@ class OpenRGBAmbientPlugin
 
 public:
     OpenRGBAmbientPlugin() = default;
-    ~OpenRGBAmbientPlugin() override = default;
+    ~OpenRGBAmbientPlugin() override;
 
     OpenRGBPluginInfo Initialize(bool dark_theme, ResourceManager *resource_manager_ptr) override;
 
@@ -31,6 +33,11 @@ public:
 private:
     ResourceManager *resourceManager = nullptr;
     std::unique_ptr<Settings> settings;
+
+    std::atomic_bool stopFlag{false};
+    std::thread captureThread;
+
+    void startCapture();
 };
 
 #endif //OPENRGB_AMBIENT_OPENRGBAMBIENTPLUGIN_H

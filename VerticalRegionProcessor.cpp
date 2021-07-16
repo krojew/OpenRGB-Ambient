@@ -2,6 +2,8 @@
 // Created by Kamil Rojewski on 16.07.2021.
 //
 
+#include "ColorConversion.h"
+
 #include "VerticalRegionProcessor.h"
 
 VerticalRegionProcessor::VerticalRegionProcessor(int samples)
@@ -33,6 +35,6 @@ void VerticalRegionProcessor::processRegion(RGBColor *result, const uchar *data,
             }
         }
 
-        result[samples - sample - 1] = ToRGBColor(red / samplePixels, green / samplePixels, blue / samplePixels);
+        result[samples - sample - 1] = ToRGBColor(red / samplePixels, green / samplePixels, static_cast<uchar>(blue * blueScale / samplePixels));
     }
 }

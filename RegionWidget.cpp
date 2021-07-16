@@ -20,7 +20,7 @@ RegionWidget::RegionWidget(QWidget *parent)
     layout->addWidget(fromSlider);
 
     toSlider = new QSlider{Qt::Horizontal};
-    connect(fromSlider, &QSlider::valueChanged, this, [=](auto to) {
+    connect(toSlider, &QSlider::valueChanged, this, [=](auto to) {
         emit regionChanged(fromSlider->value(), to);
     });
 

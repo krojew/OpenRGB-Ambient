@@ -23,7 +23,10 @@ RegionsWidget::RegionsWidget(ResourceManager *resourceManager, Settings &setting
     top = new RegionWidget{};
     connect(top, &RegionWidget::regionChanged, this, [=](auto from, auto to) {
         if (!currentLocation.empty())
+        {
             this->settings.setTopRegion(currentLocation, {from, to});
+            showCurrentLeds(from, to);
+        }
     });
 
     layout->addRow("Top", top);
@@ -31,7 +34,10 @@ RegionsWidget::RegionsWidget(ResourceManager *resourceManager, Settings &setting
     bottom = new RegionWidget{};
     connect(bottom, &RegionWidget::regionChanged, this, [=](auto from, auto to) {
         if (!currentLocation.empty())
+        {
             this->settings.setBottomRegion(currentLocation, {from, to});
+            showCurrentLeds(from, to);
+        }
     });
 
     layout->addRow("Bottom", bottom);
@@ -39,7 +45,10 @@ RegionsWidget::RegionsWidget(ResourceManager *resourceManager, Settings &setting
     right = new RegionWidget{};
     connect(right, &RegionWidget::regionChanged, this, [=](auto from, auto to) {
         if (!currentLocation.empty())
+        {
             this->settings.setRightRegion(currentLocation, {from, to});
+            showCurrentLeds(from, to);
+        }
     });
 
     layout->addRow("Right", right);
@@ -47,7 +56,10 @@ RegionsWidget::RegionsWidget(ResourceManager *resourceManager, Settings &setting
     left = new RegionWidget{};
     connect(left, &RegionWidget::regionChanged, this, [=](auto from, auto to) {
         if (!currentLocation.empty())
+        {
             this->settings.setLeftRegion(currentLocation, {from, to});
+            showCurrentLeds(from, to);
+        }
     });
 
     layout->addRow("Left", left);
@@ -81,4 +93,31 @@ void RegionsWidget::selectController(const QString &location)
     bottom->setConfiguration(static_cast<int>((*controller)->leds.size()), bottomRange.from, bottomRange.to);
     right->setConfiguration(static_cast<int>((*controller)->leds.size()), rightRange.from, rightRange.to);
     left->setConfiguration(static_cast<int>((*controller)->leds.size()), leftRange.from, rightRange.to);
+}
+
+void RegionsWidget::showCurrentLeds(int from, int to)
+{
+    const auto &controllers = resourceManager->GetRGBControllers();
+    const auto controller = std::find_if(std::begin(controllers), std::end(controllers), [&](auto controller) {
+        return controller->location == currentLocation;
+    });
+
+    if (controller == std::end(controllers))
+        return;
+
+    const auto realFrom = std::min(from, to);
+    const auto realTo = std::max(from, to);
+
+    const auto len = (*controller)->leds.size();
+
+    for (auto i = 0; i < realFrom; ++i)
+        (*controller)->SetLED(i, 0);
+
+    for (auto i = realFrom; i < realTo; ++i)
+        (*controller)->SetLED(i, ToRGBColor(255, 255, 255));
+
+    for (auto i = realTo; i < len; ++i)
+        (*controller)->SetLED(i, 0);
+
+    (*controller)->UpdateLEDs();
 }

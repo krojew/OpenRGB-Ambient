@@ -35,6 +35,8 @@ private:
     RegionWidget *left = nullptr;
 
     std::string currentLocation;
+
+    void showCurrentLeds(int from, int to);
 };
 
 #endif //OPENRGB_AMBIENT_REGIONSWIDGET_H

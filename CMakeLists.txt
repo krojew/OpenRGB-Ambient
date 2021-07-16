@@ -23,7 +23,7 @@ target_link_libraries(${PROJECT_NAME} ${REQUIRED_LIBS_QUALIFIED})
 target_include_directories(${PROJECT_NAME} PRIVATE OpenRGB OpenRGB/i2c_smbus OpenRGB/net_port OpenRGB/RGBController OpenRGB/dependencies/json OpenRGB/qt)
 
 if (WIN32)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE _MBCS WIN32 _CRT_SECURE_NO_WARNINGS _WINSOCKAPI_ _WINSOCK_DEPRECATED_NO_WARNINGS WIN32_LEAN_AND_MEAN)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE _MBCS WIN32 _CRT_SECURE_NO_WARNINGS _WINSOCKAPI_ _WINSOCK_DEPRECATED_NO_WARNINGS WIN32_LEAN_AND_MEAN NOMINMAX)
 
     find_library(D3D11_LIBRARY d3d11.lib PATHS "$ENV{DXSDK_DIR}/Lib/x86" "C:/Program Files (x86)/Microsoft DirectX SDK/Lib/x86")
     target_link_libraries(${PROJECT_NAME} ${D3D11_LIBRARY})

@@ -109,7 +109,7 @@ void OpenRGBAmbientPlugin::startCapture()
 {
     captureThread = std::thread([=] {
         ScreenCapture capture;
-        Limiter limiter{30};
+        Limiter limiter{60};
 
         while (!stopFlag.load())
         {

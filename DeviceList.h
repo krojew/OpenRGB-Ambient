@@ -15,9 +15,14 @@ class Settings;
 class DeviceList
         : public QWidget
 {
+    Q_OBJECT
+
 public:
     DeviceList(ResourceManager *resourceManager, Settings &settings, QWidget *parent = nullptr);
     ~DeviceList() override = default;
+
+signals:
+    void controllerSelected(const QString &location);
 
 public slots:
     void fillControllerList();

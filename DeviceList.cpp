@@ -21,6 +21,10 @@ DeviceList::DeviceList(ResourceManager *resourceManager, Settings &settings, QWi
 
     deviceList = new QListWidget{};
     connect(deviceList, &QListWidget::itemChanged, this, &DeviceList::saveCheckState);
+    connect(deviceList, &QListWidget::currentItemChanged, this, [=](auto current, auto previous) {
+        if (current != nullptr)
+            emit controllerSelected(current->data(Qt::UserRole).toString());
+    });
 
     layout->addWidget(deviceList);
 }

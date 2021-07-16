@@ -64,8 +64,8 @@ QWidget *OpenRGBAmbientPlugin::CreateGUI(QWidget *parent) {
         const auto list = static_cast<SettingsTab *>(ui);
         QMetaObject::invokeMethod(list, &SettingsTab::controllerListChanged, Qt::QueuedConnection);
     }, ui);
-    resourceManager->RegisterDeviceListChangeCallback([](auto settings) {
-        const auto realSettings = static_cast<Settings *>(settings);
+    resourceManager->RegisterDeviceListChangeCallback([](auto widget) {
+        const auto realSettings = static_cast<Settings *>(widget);
         QMetaObject::invokeMethod(realSettings, &Settings::settingsChanged, Qt::QueuedConnection);
     }, settings);
 
@@ -109,7 +109,7 @@ void OpenRGBAmbientPlugin::startCapture()
 {
     captureThread = std::thread([=] {
         ScreenCapture capture;
-        Limiter limiter{60};
+        Limiter limiter{30};
 
         while (!stopFlag.load())
         {
@@ -121,7 +121,8 @@ void OpenRGBAmbientPlugin::startCapture()
                 continue;
             }
 
-            processImage(capture.getScreen());
+            const auto image = capture.getScreen();
+            processImage(image);
         }
     });
 }

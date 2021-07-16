@@ -192,23 +192,5 @@ bool ScreenCapture::grabContent()
 
 std::shared_ptr<ID3D11Texture2D> ScreenCapture::getScreen() const
 {
-    D3D11_TEXTURE2D_DESC texDesc;
-    image->GetDesc(&texDesc);
-
-    D3D11_TEXTURE2D_DESC desc = {};
-    desc.Width = texDesc.Width;
-    desc.Height = texDesc.Height;
-    desc.Format = texDesc.Format;
-    desc.MipLevels = 1;
-    desc.ArraySize = 1;
-    desc.SampleDesc.Count = 1;
-    desc.Usage = D3D11_USAGE_STAGING;
-    desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-
-    ID3D11Texture2D *img = nullptr;
-
-    device->CreateTexture2D(&desc, nullptr, &img);
-    deviceContext->CopyResource(img, image.get());
-
-    return releasing(img);
+    return image;
 }

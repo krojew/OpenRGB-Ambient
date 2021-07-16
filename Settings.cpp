@@ -12,8 +12,9 @@ QString Settings::BOTTOM_SUFFIX = "_Bottom"; // NOLINT(cert-err58-cpp)
 QString Settings::LEFT_SUFFIX = "_Left"; // NOLINT(cert-err58-cpp)
 QString Settings::RIGHT_SUFFIX = "_Right"; // NOLINT(cert-err58-cpp)
 
-Settings::Settings(const QString &file)
-    : settings{file, QSettings::IniFormat}
+Settings::Settings(const QString &file, QObject *parent)
+    : QObject{parent}
+    , settings{file, QSettings::IniFormat}
 {
     const auto selectedList = settings.value(SELECTED_CONTROLLERS_KEY).toStringList();
     for (const auto &selected : selectedList)
@@ -90,6 +91,8 @@ void Settings::syncSelectedControllers()
         value.append(QString::fromStdString(selected));
 
     settings.setValue(SELECTED_CONTROLLERS_KEY, value);
+
+    emit settingsChanged();
 }
 
 void Settings::syncRegions(const RegionMap &map, const QString &key)
@@ -99,6 +102,8 @@ void Settings::syncRegions(const RegionMap &map, const QString &key)
         data[QString::fromStdString(region.first)] = QVariantList{region.second.from, region.second.to};
 
     settings.setValue(key, data);
+
+    emit settingsChanged();
 }
 
 void Settings::fillRegions(RegionMap &map, const QVariantHash &data)

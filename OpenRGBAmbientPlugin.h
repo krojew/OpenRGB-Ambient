@@ -6,8 +6,9 @@
 #define OPENRGB_AMBIENT_OPENRGBAMBIENTPLUGIN_H
 
 #include <atomic>
-#include <memory>
 #include <thread>
+#include <vector>
+#include <mutex>
 
 #include <d3d11.h>
 
@@ -15,7 +16,10 @@
 
 #include <OpenRGBPluginInterface.h>
 
+#include "ImageProcessor.h"
 #include "Settings.h"
+
+class LedUpdateEvent;
 
 class OpenRGBAmbientPlugin
         : public QObject, public OpenRGBPluginInterface
@@ -28,27 +32,37 @@ public:
     OpenRGBAmbientPlugin() = default;
     ~OpenRGBAmbientPlugin() override;
 
+    bool event(QEvent *event) override;
+
     OpenRGBPluginInfo Initialize(bool dark_theme, ResourceManager *resource_manager_ptr) override;
 
     QWidget *CreateGUI(QWidget *parent) override;
 
 public slots:
     void setPreview(bool enabled);
+    void setPauseCapture(bool enabled);
+    void updateProcessors();
 
 signals:
     void previewUpdated(const QImage &image);
 
 private:
     ResourceManager *resourceManager = nullptr;
-    std::unique_ptr<Settings> settings;
+    Settings *settings = nullptr;
 
     std::atomic_bool stopFlag{false};
     std::atomic_bool preview{false};
+    std::atomic_bool pauseCapture{false};
+
+    std::mutex processorMutex;
+    std::vector<ImageProcessor> processors;
+
     std::thread captureThread;
 
     void startCapture();
 
     void processImage(const std::shared_ptr<ID3D11Texture2D> &image);
+    void processUpdate(const LedUpdateEvent &event);
 };
 
 #endif //OPENRGB_AMBIENT_OPENRGBAMBIENTPLUGIN_H

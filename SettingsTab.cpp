@@ -51,3 +51,17 @@ void SettingsTab::updatePreview(const QImage &image)
 {
     preview->setPixmap(QPixmap::fromImage(image));
 }
+
+void SettingsTab::showEvent(QShowEvent *event)
+{
+    emit settingsVisibilityChanged(true);
+
+    QWidget::showEvent(event);
+}
+
+void SettingsTab::hideEvent(QHideEvent *event)
+{
+    emit settingsVisibilityChanged(false);
+
+    QWidget::hideEvent(event);
+}

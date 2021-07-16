@@ -92,7 +92,7 @@ void RegionsWidget::selectController(const QString &location)
     top->setConfiguration(static_cast<int>((*controller)->leds.size()), topRange.from, topRange.to);
     bottom->setConfiguration(static_cast<int>((*controller)->leds.size()), bottomRange.from, bottomRange.to);
     right->setConfiguration(static_cast<int>((*controller)->leds.size()), rightRange.from, rightRange.to);
-    left->setConfiguration(static_cast<int>((*controller)->leds.size()), leftRange.from, rightRange.to);
+    left->setConfiguration(static_cast<int>((*controller)->leds.size()), leftRange.from, leftRange.to);
 }
 
 void RegionsWidget::showCurrentLeds(int from, int to)

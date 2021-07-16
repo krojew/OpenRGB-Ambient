@@ -10,21 +10,20 @@
 #include <string>
 
 #include <QSettings>
+#include <QObject>
+
+#include "LedRange.h"
 
 class ResourceManager;
 class QString;
 
-struct LedRange
-{
-    int from;
-    int to;
-};
-
 class Settings final
+        : public QObject
 {
+    Q_OBJECT
+
 public:
-    explicit Settings(const QString &file);
-    Settings(const Settings &) = delete;
+    explicit Settings(const QString &file, QObject *parent = nullptr);
 
     [[nodiscard]] bool isControllerSelected(const std::string &location) const;
     void selectController(const std::string &location);
@@ -40,7 +39,8 @@ public:
     void setRightRegion(const std::string &location, LedRange range);
     void setLeftRegion(const std::string &location, LedRange range);
 
-    Settings &operator =(const Settings &) = delete;
+signals:
+    void settingsChanged();
 
 private:
     static QString SELECTED_CONTROLLERS_KEY;

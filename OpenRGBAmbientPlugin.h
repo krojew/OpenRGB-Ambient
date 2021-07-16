@@ -60,6 +60,7 @@ private:
     std::thread captureThread;
 
     void startCapture();
+    void turnOffLeds();
 
     void processImage(const std::shared_ptr<ID3D11Texture2D> &image);
     void processUpdate(const LedUpdateEvent &event);

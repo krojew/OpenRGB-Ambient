@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <chrono>
 
+#include <QCoreApplication>
 #include <QImage>
 
 #include "LedUpdateEvent.h"
@@ -42,6 +43,8 @@ OpenRGBPluginInfo OpenRGBAmbientPlugin::Initialize(bool dark_theme, ResourceMana
 
     settings = new Settings{QString::fromStdString(resourceManager->GetConfigurationDirectory() + "/OpenRGBAmbientPlugin.ini"), this};
     connect(settings, &Settings::settingsChanged, this, &OpenRGBAmbientPlugin::updateProcessors);
+
+    connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, &OpenRGBAmbientPlugin::turnOffLeds);
 
     startCapture();
 
@@ -127,6 +130,21 @@ void OpenRGBAmbientPlugin::startCapture()
     });
 }
 
+void OpenRGBAmbientPlugin::turnOffLeds()
+{
+    pauseCapture = true;
+
+    const auto &controllers = resourceManager->GetRGBControllers();
+    for (const auto controller : controllers)
+    {
+        if (settings->isControllerSelected(controller->location))
+        {
+            controller->SetAllLEDs(0);
+            controller->UpdateLEDs();
+        }
+    }
+}
+
 void OpenRGBAmbientPlugin::processImage(const std::shared_ptr<ID3D11Texture2D> &image)
 {
     D3D11_TEXTURE2D_DESC desc;
@@ -162,12 +180,12 @@ void OpenRGBAmbientPlugin::processImage(const std::shared_ptr<ID3D11Texture2D> &
 void OpenRGBAmbientPlugin::processUpdate(const LedUpdateEvent &event)
 {
     const auto &location = event.getControllerLocation();
-    
+
     const auto &controllers = resourceManager->GetRGBControllers();
     const auto controller = std::find_if(std::begin(controllers), std::end(controllers), [&](auto controller) {
         return controller->location == location;
     });
-    
+
     if (controller != std::end(controllers))
     {
         const auto &colors = event.getColors();

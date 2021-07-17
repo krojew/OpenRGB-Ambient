@@ -83,7 +83,7 @@ void OpenRGBAmbientPlugin::setPauseCapture(bool enabled)
 
 void OpenRGBAmbientPlugin::updateProcessors()
 {
-    std::lock_guard lock{processorMutex};
+    stopCapture();
 
     processors.clear();
 
@@ -102,6 +102,9 @@ void OpenRGBAmbientPlugin::updateProcessors()
                 this
         );
     }
+
+    stopFlag = false;
+    startCapture();
 }
 
 void OpenRGBAmbientPlugin::startCapture()
@@ -170,7 +173,6 @@ void OpenRGBAmbientPlugin::processImage(const std::shared_ptr<ID3D11Texture2D> &
 
     if (!pauseCapture)
     {
-        std::lock_guard lock{processorMutex};
         for (auto &processor : processors)
             processor.processImage(static_cast<const uchar *>(mapped.pData), static_cast<int>(desc.Width), static_cast<int>(desc.Height));
     }

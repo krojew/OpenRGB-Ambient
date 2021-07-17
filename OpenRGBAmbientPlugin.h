@@ -8,7 +8,6 @@
 #include <atomic>
 #include <thread>
 #include <vector>
-#include <mutex>
 
 #include <d3d11.h>
 
@@ -54,7 +53,6 @@ private:
     std::atomic_bool preview{false};
     std::atomic_bool pauseCapture{false};
 
-    std::mutex processorMutex;
     std::vector<ImageProcessor> processors;
 
     std::thread captureThread;

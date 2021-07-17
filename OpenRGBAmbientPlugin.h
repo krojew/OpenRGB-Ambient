@@ -60,6 +60,7 @@ private:
     std::thread captureThread;
 
     void startCapture();
+    void stopCapture();
     void turnOffLeds();
 
     void processImage(const std::shared_ptr<ID3D11Texture2D> &image);

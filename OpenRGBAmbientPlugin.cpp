@@ -20,11 +20,7 @@ using namespace std::chrono_literals;
 
 OpenRGBAmbientPlugin::~OpenRGBAmbientPlugin()
 {
-    if (captureThread.joinable())
-    {
-        stopFlag = true;
-        captureThread.join();
-    }
+    stopCapture();
 }
 
 bool OpenRGBAmbientPlugin::event(QEvent *event)
@@ -34,7 +30,7 @@ bool OpenRGBAmbientPlugin::event(QEvent *event)
         processUpdate(*static_cast<LedUpdateEvent *>(event)); // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
         return true;
     }
-    
+
     return QObject::event(event);
 }
 
@@ -44,7 +40,7 @@ OpenRGBPluginInfo OpenRGBAmbientPlugin::Initialize(bool dark_theme, ResourceMana
     settings = new Settings{QString::fromStdString(resourceManager->GetConfigurationDirectory() + "/OpenRGBAmbientPlugin.ini"), this};
     connect(settings, &Settings::settingsChanged, this, &OpenRGBAmbientPlugin::updateProcessors);
 
-    connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, &OpenRGBAmbientPlugin::turnOffLeds);
+    connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, &OpenRGBAmbientPlugin::turnOffLeds, Qt::DirectConnection);
 
     startCapture();
 
@@ -130,9 +126,18 @@ void OpenRGBAmbientPlugin::startCapture()
     });
 }
 
+void OpenRGBAmbientPlugin::stopCapture()
+{
+    if (captureThread.joinable())
+    {
+        stopFlag = true;
+        captureThread.join();
+    }
+}
+
 void OpenRGBAmbientPlugin::turnOffLeds()
 {
-    pauseCapture = true;
+    stopCapture();
 
     const auto &controllers = resourceManager->GetRGBControllers();
     for (const auto controller : controllers)

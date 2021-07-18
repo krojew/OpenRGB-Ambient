@@ -9,7 +9,7 @@
 #include <memory>
 
 #include <windows.h>
-#include <dxgi1_2.h>
+#include <dxgi1_5.h>
 #include <d3d11.h>
 #include <dxgi.h>
 
@@ -29,7 +29,7 @@ private:
     std::shared_ptr<ID3D11Device> device;
     std::shared_ptr<ID3D11DeviceContext> deviceContext;
     std::shared_ptr<IDXGIOutputDuplication> duplicator;
-    std::shared_ptr<IDXGIOutput1> duplicatorOutput;
+    std::shared_ptr<IDXGIOutput5> duplicatorOutput;
     std::shared_ptr<ID3D11Texture2D> image;
 
     void initAdapter(UINT index = 0);

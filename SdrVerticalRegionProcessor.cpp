@@ -4,14 +4,14 @@
 
 #include "ColorConversion.h"
 
-#include "VerticalRegionProcessor.h"
+#include "SdrVerticalRegionProcessor.h"
 
-VerticalRegionProcessor::VerticalRegionProcessor(int samples)
+SdrVerticalRegionProcessor::SdrVerticalRegionProcessor(int samples)
     : samples{samples}
 {
 }
 
-void VerticalRegionProcessor::processRegion(RGBColor *result, const uchar *data, int width, int height, int startX, int realWidth) const
+void SdrVerticalRegionProcessor::processRegion(RGBColor *result, const uchar *data, int width, int height, int startX, int realWidth) const
 {
     const auto sampleHeight = height / samples;
     const auto samplePixels = sampleHeight * width;

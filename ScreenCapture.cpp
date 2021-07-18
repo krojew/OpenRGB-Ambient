@@ -94,7 +94,7 @@ void ScreenCapture::initDevice()
 
 bool ScreenCapture::initDuplicator()
 {
-    IDXGIOutput1 *output = nullptr;
+    IDXGIOutput5 *output = nullptr;
 
     if (FAILED(adapterOutput->QueryInterface(__uuidof(IDXGIOutput1), reinterpret_cast<void **>(&output))))
         throw std::runtime_error("Failed to query IDXGIOutput1");
@@ -104,7 +104,9 @@ bool ScreenCapture::initDuplicator()
 
     IDXGIOutputDuplication *pDuplicator = nullptr;
 
-    const auto hr = output->DuplicateOutput(device.get(), &pDuplicator);
+    const DXGI_FORMAT captureFormats[] = {DXGI_FORMAT_R10G10B10A2_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM};
+
+    const auto hr = output->DuplicateOutput1(device.get(), 0, 2, captureFormats, &pDuplicator);
     if (hr == E_ACCESSDENIED || hr == DXGI_ERROR_SESSION_DISCONNECTED)
         return false;
 

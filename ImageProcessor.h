@@ -12,8 +12,10 @@
 
 #include <RGBController.h>
 
-#include "HorizontalRegionProcessor.h"
-#include "VerticalRegionProcessor.h"
+#include "SdrHorizontalRegionProcessor.h"
+#include "SdrVerticalRegionProcessor.h"
+#include "HdrHorizontalRegionProcessor.h"
+#include "HdrVerticalRegionProcessor.h"
 #include "LedRange.h"
 
 class QObject;
@@ -28,7 +30,8 @@ public:
                    LedRange leftRange,
                    QObject *eventReceiver);
 
-    void processImage(const uchar *data, int width, int height);
+    void processSdrImage(const uchar *data, int width, int height);
+    void processHdrImage(const uint *data, int width, int height);
 
 private:
     static const int resolutionDivisor = 5;
@@ -41,10 +44,15 @@ private:
     LedRange leftRange;
     LedRange rightRange;
 
-    HorizontalRegionProcessor topProcessor;
-    HorizontalRegionProcessor bottomProcessor;
-    VerticalRegionProcessor leftProcessor;
-    VerticalRegionProcessor rightProcessor;
+    SdrHorizontalRegionProcessor topSdrProcessor;
+    SdrHorizontalRegionProcessor bottomSdrProcessor;
+    SdrVerticalRegionProcessor leftSdrProcessor;
+    SdrVerticalRegionProcessor rightSdrProcessor;
+
+    HdrHorizontalRegionProcessor topHdrProcessor;
+    HdrHorizontalRegionProcessor bottomHdrProcessor;
+    HdrVerticalRegionProcessor leftHdrProcessor;
+    HdrVerticalRegionProcessor rightHdrProcessor;
 
     std::vector<RGBColor> colors;
 };

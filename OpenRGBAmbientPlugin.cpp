@@ -173,11 +173,25 @@ void OpenRGBAmbientPlugin::processImage(const std::shared_ptr<ID3D11Texture2D> &
 
     if (!pauseCapture)
     {
-        for (auto &processor : processors)
-            processor.processImage(static_cast<const uchar *>(mapped.pData), static_cast<int>(desc.Width), static_cast<int>(desc.Height));
+        if (desc.Format == DXGI_FORMAT_R10G10B10A2_UNORM)
+        {
+            for (auto &processor : processors)
+            {
+                processor.processHdrImage(static_cast<const uint *>(mapped.pData), static_cast<int>(desc.Width),
+                                          static_cast<int>(desc.Height));
+            }
+        }
+        else
+        {
+            for (auto &processor : processors)
+            {
+                processor.processSdrImage(static_cast<const uchar *>(mapped.pData), static_cast<int>(desc.Width),
+                                          static_cast<int>(desc.Height));
+            }
+        }
     }
 
-    if (preview)
+    if (preview && desc.Format != DXGI_FORMAT_R10G10B10A2_UNORM)
     {
         QImage previewImg{static_cast<const uchar *>(mapped.pData), static_cast<int>(desc.Width), static_cast<int>(desc.Height), QImage::Format_RGB32};
         emit previewUpdated(previewImg.copy());

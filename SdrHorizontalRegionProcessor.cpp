@@ -4,14 +4,14 @@
 
 #include "ColorConversion.h"
 
-#include "HorizontalRegionProcessor.h"
+#include "SdrHorizontalRegionProcessor.h"
 
-HorizontalRegionProcessor::HorizontalRegionProcessor(int samples)
+SdrHorizontalRegionProcessor::SdrHorizontalRegionProcessor(int samples)
     : samples{samples}
 {
 }
 
-void HorizontalRegionProcessor::processRegion(RGBColor *result, const uchar *data, int width, int height) const
+void SdrHorizontalRegionProcessor::processRegion(RGBColor *result, const uchar *data, int width, int height) const
 {
     const auto sampleWidth = width / samples;
     const auto samplePixels = sampleWidth * height;

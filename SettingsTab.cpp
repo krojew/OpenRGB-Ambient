@@ -20,7 +20,7 @@ SettingsTab::SettingsTab(ResourceManager *resourceManager, Settings &settings, Q
     const auto topLayout = new QHBoxLayout{};
     const auto previewLayout = new QVBoxLayout{};
 
-    const auto previewBtn = new QCheckBox{"Preview"};
+    const auto previewBtn = new QCheckBox{"Preview (not supported for HDR)"};
     connect(previewBtn, &QCheckBox::stateChanged, this, [=](auto state) {
         emit previewChanged(state == Qt::Checked);
     });

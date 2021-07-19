@@ -151,6 +151,9 @@ void OpenRGBAmbientPlugin::turnOffLeds()
             controller->UpdateLEDs();
         }
     }
+
+    // give some time for async update
+    std::this_thread::sleep_for(100ms);
 }
 
 void OpenRGBAmbientPlugin::processImage(const std::shared_ptr<ID3D11Texture2D> &image)

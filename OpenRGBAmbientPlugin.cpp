@@ -153,7 +153,7 @@ void OpenRGBAmbientPlugin::turnOffLeds()
     }
 
     // give some time for async update
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(200ms);
 }
 
 void OpenRGBAmbientPlugin::processImage(const std::shared_ptr<ID3D11Texture2D> &image)
@@ -180,7 +180,7 @@ void OpenRGBAmbientPlugin::processImage(const std::shared_ptr<ID3D11Texture2D> &
         {
             for (auto &processor : processors)
             {
-                processor.processHdrImage(static_cast<const uint *>(mapped.pData), static_cast<int>(desc.Width),
+                processor.processHdrImage(static_cast<const std::uint32_t *>(mapped.pData), static_cast<int>(desc.Width),
                                           static_cast<int>(desc.Height));
             }
         }

@@ -14,7 +14,7 @@ class HdrHorizontalRegionProcessor final
 public:
     explicit HdrHorizontalRegionProcessor(int samples);
 
-    void processRegion(RGBColor *result, const uint *data, int width, int height) const;
+    void processRegion(RGBColor *result, const std::uint32_t *data, int width, int height) const;
 
 private:
     int samples = 0;

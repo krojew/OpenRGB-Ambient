@@ -89,10 +89,12 @@ void RegionsWidget::selectController(const QString &location)
     const auto rightRange = settings.getRightRegion(currentLocation);
     const auto leftRange = settings.getLeftRegion(currentLocation);
 
-    top->setConfiguration(static_cast<int>((*controller)->leds.size()), topRange.from, topRange.to);
-    bottom->setConfiguration(static_cast<int>((*controller)->leds.size()), bottomRange.from, bottomRange.to);
-    right->setConfiguration(static_cast<int>((*controller)->leds.size()), rightRange.from, rightRange.to);
-    left->setConfiguration(static_cast<int>((*controller)->leds.size()), leftRange.from, leftRange.to);
+    const auto max = static_cast<int>((*controller)->leds.size()) + 1;
+
+    top->setConfiguration(max, topRange.from, topRange.to);
+    bottom->setConfiguration(max, bottomRange.from, bottomRange.to);
+    right->setConfiguration(max, rightRange.from, rightRange.to);
+    left->setConfiguration(max, leftRange.from, leftRange.to);
 }
 
 void RegionsWidget::showCurrentLeds(int from, int to)

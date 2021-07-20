@@ -3,9 +3,7 @@
 //
 
 #include <QHBoxLayout>
-#include <QVBoxLayout>
 #include <QCheckBox>
-#include <QPixmap>
 #include <QLabel>
 
 #include "RegionsWidget.h"

@@ -33,8 +33,8 @@ ImageProcessor::ImageProcessor(std::string controllerLocation,
 
 void ImageProcessor::processSdrImage(const uchar *data, int width, int height)
 {
-    const auto sampleHeight = height / resolutionDivisor;
-    const auto sampleWidth = width / resolutionDivisor;
+    const auto sampleHeight = height / resolutionHeightDivisor;
+    const auto sampleWidth = width / resolutionWidthDivisor;
 
     const auto realTop = std::min(topRange.from, topRange.to);
     const auto realBottom = std::min(bottomRange.from, bottomRange.to);
@@ -51,8 +51,8 @@ void ImageProcessor::processSdrImage(const uchar *data, int width, int height)
 
 void ImageProcessor::processHdrImage(const uint *data, int width, int height)
 {
-    const auto sampleHeight = height / resolutionDivisor;
-    const auto sampleWidth = width / resolutionDivisor;
+    const auto sampleHeight = height / resolutionHeightDivisor;
+    const auto sampleWidth = width / resolutionHeightDivisor;
 
     const auto realTop = std::min(topRange.from, topRange.to);
     const auto realBottom = std::min(bottomRange.from, bottomRange.to);

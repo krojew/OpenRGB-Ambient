@@ -34,7 +34,8 @@ public:
     void processHdrImage(const uint *data, int width, int height);
 
 private:
-    static const int resolutionDivisor = 5;
+    static const int resolutionHeightDivisor = 10;
+    static const int resolutionWidthDivisor = 12;
 
     std::string controllerLocation;
     QObject *eventReceiver;

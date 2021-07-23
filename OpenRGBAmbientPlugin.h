@@ -37,6 +37,8 @@ public:
 
     QWidget *CreateGUI(QWidget *parent) override;
 
+    void turnOffLeds();
+
 public slots:
     void setPreview(bool enabled);
     void setPauseCapture(bool enabled);
@@ -46,6 +48,8 @@ signals:
     void previewUpdated(const QImage &image);
 
 private:
+    static const char *END_SESSION_WND_CLASS;
+
     ResourceManager *resourceManager = nullptr;
     Settings *settings = nullptr;
 
@@ -59,7 +63,6 @@ private:
 
     void startCapture();
     void stopCapture();
-    void turnOffLeds();
 
     void processImage(const std::shared_ptr<ID3D11Texture2D> &image);
     void processUpdate(const LedUpdateEvent &event);

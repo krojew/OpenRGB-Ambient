@@ -8,6 +8,8 @@
 #include <QCoreApplication>
 #include <QImage>
 
+#include <windows.h>
+
 #include "LedUpdateEvent.h"
 #include "ReleaseWrapper.h"
 #include "ScreenCapture.h"
@@ -17,6 +19,20 @@
 #include "OpenRGBAmbientPlugin.h"
 
 using namespace std::chrono_literals;
+
+const char *OpenRGBAmbientPlugin::END_SESSION_WND_CLASS = "OpenRGBAmbientPlugin";
+
+LRESULT CALLBACK EndSessionWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    if (uMsg == WM_QUERYENDSESSION)
+    {
+        const auto plugin = reinterpret_cast<OpenRGBAmbientPlugin *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+        if (plugin != nullptr)
+            plugin->turnOffLeds();
+    }
+
+    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
 
 OpenRGBAmbientPlugin::~OpenRGBAmbientPlugin()
 {
@@ -41,6 +57,18 @@ OpenRGBPluginInfo OpenRGBAmbientPlugin::Initialize(bool dark_theme, ResourceMana
     connect(settings, &Settings::settingsChanged, this, &OpenRGBAmbientPlugin::updateProcessors);
 
     connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, &OpenRGBAmbientPlugin::turnOffLeds, Qt::DirectConnection);
+
+    // create a dummy window to capture WM_QUERYENDSESSION and turn off leds (it's not captured by Qt)
+
+    WNDCLASSEX wx = {};
+    wx.cbSize = sizeof(WNDCLASSEX);
+    wx.lpfnWndProc = EndSessionWindowProc;
+    wx.hInstance = GetModuleHandle(nullptr);
+    wx.lpszClassName = END_SESSION_WND_CLASS;
+    RegisterClassEx(&wx);
+
+    const auto hwnd = CreateWindowEx(0, END_SESSION_WND_CLASS, "", 0, 0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr);
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
     startCapture();
 

@@ -50,7 +50,29 @@ bool OpenRGBAmbientPlugin::event(QEvent *event)
     return QObject::event(event);
 }
 
-OpenRGBPluginInfo OpenRGBAmbientPlugin::Initialize(bool dark_theme, ResourceManager *resource_manager_ptr) {
+OpenRGBPluginInfo OpenRGBAmbientPlugin::GetPluginInfo()
+{
+    return {
+            "OpenRGBAmbientPlugin",
+            "Desktop ambient light support",
+            "2.0.0",
+            "",
+            "https://github.com/krojew/OpenRGB-Ambient",
+            {},
+            OPENRGB_PLUGIN_LOCATION_TOP,
+            "Ambient",
+            "",
+            {}
+    };
+}
+
+unsigned int OpenRGBAmbientPlugin::GetPluginAPIVersion()
+{
+    return OPENRGB_PLUGIN_API_VERSION;
+}
+
+void OpenRGBAmbientPlugin::Load(bool dark_theme, ResourceManager *resource_manager_ptr)
+{
     resourceManager = resource_manager_ptr;
 
     settings = new Settings{QString::fromStdString(resourceManager->GetConfigurationDirectory() + "/OpenRGBAmbientPlugin.ini"), this};
@@ -71,18 +93,11 @@ OpenRGBPluginInfo OpenRGBAmbientPlugin::Initialize(bool dark_theme, ResourceMana
     SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
     startCapture();
-
-    return {
-            "OpenRGBAmbientPlugin",
-            "Desktop ambient light support",
-            "TopTabBar",
-            false,
-            new QLabel{"Ambient"}
-    };
 }
 
-QWidget *OpenRGBAmbientPlugin::CreateGUI(QWidget *parent) {
-    const auto ui = new SettingsTab{resourceManager, *settings, parent};
+QWidget *OpenRGBAmbientPlugin::GetWidget()
+{
+    const auto ui = new SettingsTab{resourceManager, *settings};
     connect(this, &OpenRGBAmbientPlugin::previewUpdated, ui, &SettingsTab::updatePreview);
     connect(ui, &SettingsTab::previewChanged, this, &OpenRGBAmbientPlugin::setPreview);
     connect(ui, &SettingsTab::settingsVisibilityChanged, this, &OpenRGBAmbientPlugin::setPauseCapture);
@@ -97,6 +112,16 @@ QWidget *OpenRGBAmbientPlugin::CreateGUI(QWidget *parent) {
     }, settings);
 
     return ui;
+}
+
+QMenu *OpenRGBAmbientPlugin::GetTrayMenu()
+{
+    return nullptr;
+}
+
+void OpenRGBAmbientPlugin::Unload()
+{
+    stopCapture();
 }
 
 void OpenRGBAmbientPlugin::setPreview(bool enabled)

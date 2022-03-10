@@ -9,4 +9,7 @@ NZXT CAM, at the moment, is very buggy. This plugin provides a lighter and more 
 * shuts LEDs down along with the OS
 * less resource usage
 
-Note: currently works only on Windows 10.
+Note: currently confirmed to be working on Windows 10, but Windows 11 *should* also work.
+
+Versions older than **2.0.0** should be used with OpenRGB **0.6**, while 2.0.0 or newer should work with
+OpenRGB **0.7** or newer. 

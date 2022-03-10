@@ -33,9 +33,17 @@ public:
 
     bool event(QEvent *event) override;
 
-    OpenRGBPluginInfo Initialize(bool dark_theme, ResourceManager *resource_manager_ptr) override;
+    OpenRGBPluginInfo GetPluginInfo() override;
 
-    QWidget *CreateGUI(QWidget *parent) override;
+    unsigned int GetPluginAPIVersion() override;
+
+    void Load(bool dark_theme, ResourceManager *resource_manager_ptr) override;
+
+    QWidget *GetWidget() override;
+
+    QMenu *GetTrayMenu() override;
+
+    void Unload() override;
 
     void turnOffLeds();
 

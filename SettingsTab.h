@@ -18,7 +18,7 @@ class SettingsTab
     Q_OBJECT
 
 public:
-    SettingsTab(ResourceManager *resourceManager, Settings &settings, QWidget *parent);
+    SettingsTab(ResourceManager *resourceManager, Settings &settings, QWidget *parent = nullptr);
     ~SettingsTab() override = default;
 
 public slots:

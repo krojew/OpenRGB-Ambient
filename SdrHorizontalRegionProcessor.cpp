@@ -13,6 +13,10 @@ SdrHorizontalRegionProcessor::SdrHorizontalRegionProcessor(int samples)
 
 void SdrHorizontalRegionProcessor::processRegion(RGBColor *result, const uchar *data, int width, int height) const
 {
+    if (samples <= 0) {
+        return;
+    }
+
     const auto sampleWidth = width / samples;
     const auto samplePixels = sampleWidth * height;
 

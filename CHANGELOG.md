@@ -1,3 +1,7 @@
+# [2.0.1]
+
+* Fixed crash with incomplete initial configuration.
+
 # [2.0.0]
 
 * OpenRGB 0.7 support.

@@ -13,6 +13,10 @@ HdrVerticalRegionProcessor::HdrVerticalRegionProcessor(int samples)
 
 void HdrVerticalRegionProcessor::processRegion(RGBColor *result, const std::uint32_t *data, int width, int height, int startX, int realWidth) const
 {
+    if (samples <= 0) {
+        return;
+    }
+
     const auto sampleHeight = height / samples;
     const auto samplePixels = sampleHeight * width;
 

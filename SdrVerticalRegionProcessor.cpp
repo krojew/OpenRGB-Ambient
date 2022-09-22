@@ -2,12 +2,11 @@
 // Created by Kamil Rojewski on 16.07.2021.
 //
 
-#include "ColorConversion.h"
-
 #include "SdrVerticalRegionProcessor.h"
 
-SdrVerticalRegionProcessor::SdrVerticalRegionProcessor(int samples)
+SdrVerticalRegionProcessor::SdrVerticalRegionProcessor(int samples, float blueCompensation)
     : samples{samples}
+    , blueCompensation{blueCompensation}
 {
 }
 
@@ -39,6 +38,6 @@ void SdrVerticalRegionProcessor::processRegion(RGBColor *result, const uchar *da
             }
         }
 
-        result[samples - sample - 1] = ToRGBColor(red / samplePixels, green / samplePixels, static_cast<uchar>(blue * blueScale / samplePixels));
+        result[samples - sample - 1] = ToRGBColor(red / samplePixels, green / samplePixels, static_cast<uchar>(blue * blueCompensation / samplePixels));
     }
 }

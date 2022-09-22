@@ -39,12 +39,16 @@ public:
     void setRightRegion(const std::string &location, LedRange range);
     void setLeftRegion(const std::string &location, LedRange range);
 
+    bool compensateCoolWhite() const noexcept;
+    void setCoolWhiteCompensation(bool value);
+
 signals:
     void settingsChanged();
 
 private:
     static QString SELECTED_CONTROLLERS_KEY;
     static QString CONTROLLER_REGIONS_KEY;
+    static QString COOL_WHITE_COMPENSATION_KEY;
 
     static QString TOP_SUFFIX;
     static QString BOTTOM_SUFFIX;
@@ -61,6 +65,8 @@ private:
     RegionMap bottomRegions;
     RegionMap rightRegions;
     RegionMap leftRegions;
+
+    bool coolWhiteCompensation = true;
 
     void syncSelectedControllers();
     void syncRegions(const RegionMap &map, const QString &key);

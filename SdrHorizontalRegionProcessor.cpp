@@ -1,13 +1,11 @@
 //
 // Created by Kamil Rojewski on 16.07.2021.
 //
-
-#include "ColorConversion.h"
-
 #include "SdrHorizontalRegionProcessor.h"
 
-SdrHorizontalRegionProcessor::SdrHorizontalRegionProcessor(int samples)
+SdrHorizontalRegionProcessor::SdrHorizontalRegionProcessor(int samples, float blueCompensation)
     : samples{samples}
+    , blueCompensation{blueCompensation}
 {
 }
 
@@ -38,6 +36,6 @@ void SdrHorizontalRegionProcessor::processRegion(RGBColor *result, const uchar *
             }
         }
 
-        result[samples - sample - 1] = ToRGBColor(red / samplePixels, green / samplePixels, static_cast<uchar>(blue * blueScale / samplePixels));
+        result[samples - sample - 1] = ToRGBColor(red / samplePixels, green / samplePixels, static_cast<uchar>(blue * blueCompensation / samplePixels));
     }
 }

@@ -10,6 +10,7 @@
 
 #include <windows.h>
 
+#include "ColorConversion.h"
 #include "LedUpdateEvent.h"
 #include "ReleaseWrapper.h"
 #include "ScreenCapture.h"
@@ -55,7 +56,7 @@ OpenRGBPluginInfo OpenRGBAmbientPlugin::GetPluginInfo()
     return {
             "OpenRGBAmbientPlugin",
             "Desktop ambient light support",
-            "2.0.0",
+            "2.1.0",
             "",
             "https://github.com/krojew/OpenRGB-Ambient",
             {},
@@ -140,6 +141,8 @@ void OpenRGBAmbientPlugin::updateProcessors()
 
     processors.clear();
 
+    const auto blueCompensation = settings->compensateCoolWhite() ? coolWhiteBlueScale : 1.f;
+
     const auto &controllers = resourceManager->GetRGBControllers();
     for (const auto controller : controllers)
     {
@@ -152,6 +155,7 @@ void OpenRGBAmbientPlugin::updateProcessors()
                 settings->getBottomRegion(controller->location),
                 settings->getRightRegion(controller->location),
                 settings->getLeftRegion(controller->location),
+                blueCompensation,
                 this
         );
     }

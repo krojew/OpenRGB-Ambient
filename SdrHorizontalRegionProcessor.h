@@ -12,12 +12,13 @@
 class SdrHorizontalRegionProcessor final
 {
 public:
-    explicit SdrHorizontalRegionProcessor(int samples);
+    SdrHorizontalRegionProcessor(int samples, float blueCompensation);
 
     void processRegion(RGBColor *result, const uchar *data, int width, int height) const;
 
 private:
     int samples = 0;
+    float blueCompensation = 1;
 };
 
 #endif //OPENRGB_AMBIENT_SDRHORIZONTALREGIONPROCESSOR_H

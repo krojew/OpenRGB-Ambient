@@ -12,12 +12,13 @@
 class HdrVerticalRegionProcessor final
 {
 public:
-    explicit HdrVerticalRegionProcessor(int samples);
+    HdrVerticalRegionProcessor(int samples, float blueCompensation);
 
     void processRegion(RGBColor *result, const std::uint32_t *data, int width, int height, int startX, int realWidth) const;
 
 private:
     int samples = 0;
+    float blueCompensation = 1;
 };
 
 #endif //OPENRGB_AMBIENT_HDRVERTICALREGIONPROCESSOR_H

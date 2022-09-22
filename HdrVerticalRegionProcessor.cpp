@@ -1,13 +1,11 @@
 //
 // Created by Kamil Rojewski on 18.07.2021.
 //
-
-#include "ColorConversion.h"
-
 #include "HdrVerticalRegionProcessor.h"
 
-HdrVerticalRegionProcessor::HdrVerticalRegionProcessor(int samples)
+HdrVerticalRegionProcessor::HdrVerticalRegionProcessor(int samples, float blueCompensation)
         : samples{samples}
+        , blueCompensation{blueCompensation}
 {
 }
 
@@ -46,7 +44,7 @@ void HdrVerticalRegionProcessor::processRegion(RGBColor *result, const std::uint
         result[samples - sample - 1] = ToRGBColor(
                 red / samplePixels / 4,
                 green / samplePixels / 4,
-                static_cast<uchar>(blue * blueScale / samplePixels / 4)
+                static_cast<uchar>(blue * blueCompensation / samplePixels / 4)
         );
     }
 }

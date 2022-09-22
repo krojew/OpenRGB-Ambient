@@ -8,6 +8,7 @@
 
 #include "RegionsWidget.h"
 #include "DeviceList.h"
+#include "Settings.h"
 
 #include "SettingsTab.h"
 
@@ -37,6 +38,13 @@ SettingsTab::SettingsTab(ResourceManager *resourceManager, Settings &settings, Q
     topLayout->addWidget(regionsWidget);
 
     mainLayout->addLayout(topLayout);
+
+    const auto coolWhiteCompensationBtn = new QCheckBox{"Cool white LED compensation", this};
+    coolWhiteCompensationBtn->setChecked(settings.compensateCoolWhite());
+    connect(coolWhiteCompensationBtn, &QCheckBox::stateChanged, this, [&](auto state) {
+        settings.setCoolWhiteCompensation(state == Qt::Checked);
+    });
+    mainLayout->addWidget(coolWhiteCompensationBtn);
 
     const auto deviceList = new DeviceList{resourceManager, settings};
     connect(this, &SettingsTab::controllerListChanged, deviceList, &DeviceList::fillControllerList);

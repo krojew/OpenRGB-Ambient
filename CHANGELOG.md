@@ -1,3 +1,7 @@
+# [2.1.0]
+
+* Option to disable cool white compensation.
+
 # [2.0.1]
 
 * Fixed crash with incomplete initial configuration.

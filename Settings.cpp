@@ -6,6 +6,7 @@
 
 QString Settings::SELECTED_CONTROLLERS_KEY = "SelectedControllers"; // NOLINT(cert-err58-cpp)
 QString Settings::CONTROLLER_REGIONS_KEY = "ControllerRegions"; // NOLINT(cert-err58-cpp)
+QString Settings::COOL_WHITE_COMPENSATION_KEY = "CoolWhiteCompensation"; // NOLINT(cert-err58-cpp)
 
 QString Settings::TOP_SUFFIX = "_Top"; // NOLINT(cert-err58-cpp)
 QString Settings::BOTTOM_SUFFIX = "_Bottom"; // NOLINT(cert-err58-cpp)
@@ -24,6 +25,8 @@ Settings::Settings(const QString &file, QObject *parent)
     fillRegions(bottomRegions, settings.value(CONTROLLER_REGIONS_KEY + BOTTOM_SUFFIX).toHash());
     fillRegions(leftRegions, settings.value(CONTROLLER_REGIONS_KEY + LEFT_SUFFIX).toHash());
     fillRegions(rightRegions, settings.value(CONTROLLER_REGIONS_KEY + RIGHT_SUFFIX).toHash());
+
+    coolWhiteCompensation = settings.value(COOL_WHITE_COMPENSATION_KEY, true).toBool();
 }
 
 bool Settings::isControllerSelected(const std::string &location) const {
@@ -122,4 +125,17 @@ LedRange Settings::findRange(const RegionMap &map, const std::string &location)
 {
     const auto entry = map.find(location);
     return (entry != std::end(map)) ? (entry->second) : (LedRange{});
+}
+
+bool Settings::compensateCoolWhite() const noexcept
+{
+    return coolWhiteCompensation;
+}
+
+void Settings::setCoolWhiteCompensation(bool value)
+{
+    coolWhiteCompensation = value;
+    settings.setValue(COOL_WHITE_COMPENSATION_KEY, coolWhiteCompensation);
+
+    emit settingsChanged();
 }

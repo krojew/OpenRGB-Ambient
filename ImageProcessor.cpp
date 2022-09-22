@@ -13,6 +13,7 @@ ImageProcessor::ImageProcessor(std::string controllerLocation,
                                LedRange bottomRange,
                                LedRange rightRange,
                                LedRange leftRange,
+                               float blueCompensation,
                                QObject *eventReceiver)
         : controllerLocation{std::move(controllerLocation)}
         , eventReceiver{eventReceiver}
@@ -20,14 +21,14 @@ ImageProcessor::ImageProcessor(std::string controllerLocation,
         , leftRange{leftRange}
         , bottomRange{bottomRange}
         , topRange{topRange}
-        , topSdrProcessor{topRange.getLength()}
-        , bottomSdrProcessor{bottomRange.getLength()}
-        , leftSdrProcessor{leftRange.getLength()}
-        , rightSdrProcessor{rightRange.getLength()}
-        , topHdrProcessor{topRange.getLength()}
-        , bottomHdrProcessor{bottomRange.getLength()}
-        , leftHdrProcessor{leftRange.getLength()}
-        , rightHdrProcessor{rightRange.getLength()}
+        , topSdrProcessor{topRange.getLength(), blueCompensation}
+        , bottomSdrProcessor{bottomRange.getLength(), blueCompensation}
+        , leftSdrProcessor{leftRange.getLength(), blueCompensation}
+        , rightSdrProcessor{rightRange.getLength(), blueCompensation}
+        , topHdrProcessor{topRange.getLength(), blueCompensation}
+        , bottomHdrProcessor{bottomRange.getLength(), blueCompensation}
+        , leftHdrProcessor{leftRange.getLength(), blueCompensation}
+        , rightHdrProcessor{rightRange.getLength(), blueCompensation}
         , colors(topRange.getLength() + bottomRange.getLength() + leftRange.getLength() + rightRange.getLength())
 {}
 

@@ -28,6 +28,7 @@ public:
                    LedRange bottomRange,
                    LedRange rightRange,
                    LedRange leftRange,
+                   float blueCompensation,
                    QObject *eventReceiver);
 
     void processSdrImage(const uchar *data, int width, int height);

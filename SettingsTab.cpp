@@ -4,8 +4,10 @@
 
 #include <QHBoxLayout>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QLabel>
 
+#include "ColorConversion.h"
 #include "RegionsWidget.h"
 #include "DeviceList.h"
 #include "Settings.h"
@@ -39,12 +41,31 @@ SettingsTab::SettingsTab(ResourceManager *resourceManager, Settings &settings, Q
 
     mainLayout->addLayout(topLayout);
 
+    const auto colorCorrectionLayout = new QHBoxLayout{};
+    colorCorrectionLayout->addWidget(new QLabel{"Display color temperature:", this});
+
+    const auto colorTemperatureCombo = new QComboBox{this};
+
+    for (auto i = 0; i < std::extent_v<decltype(colorTemperatureFactors)>; ++i)
+    {
+        colorTemperatureCombo->addItem(QString::number(1000 + i * 100), i);
+    }
+
+    colorTemperatureCombo->setCurrentIndex(settings.colorTemperatureFactorIndex());
+    connect(colorTemperatureCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [&](auto index) {
+        settings.setColorTemperatureFactorIndex(index);
+    });
+    colorCorrectionLayout->addWidget(colorTemperatureCombo);
+
     const auto coolWhiteCompensationBtn = new QCheckBox{"Cool white LED compensation", this};
     coolWhiteCompensationBtn->setChecked(settings.compensateCoolWhite());
     connect(coolWhiteCompensationBtn, &QCheckBox::stateChanged, this, [&](auto state) {
         settings.setCoolWhiteCompensation(state == Qt::Checked);
     });
-    mainLayout->addWidget(coolWhiteCompensationBtn);
+    colorCorrectionLayout->addWidget(coolWhiteCompensationBtn);
+    colorCorrectionLayout->addStretch();
+
+    mainLayout->addLayout(colorCorrectionLayout);
 
     const auto deviceList = new DeviceList{resourceManager, settings};
     connect(this, &SettingsTab::controllerListChanged, deviceList, &DeviceList::fillControllerList);

@@ -3,9 +3,9 @@
 //
 #include "HdrHorizontalRegionProcessor.h"
 
-HdrHorizontalRegionProcessor::HdrHorizontalRegionProcessor(int samples, float blueCompensation)
+HdrHorizontalRegionProcessor::HdrHorizontalRegionProcessor(int samples, std::array<float, 3> colorFactors)
         : samples{samples}
-        , blueCompensation{blueCompensation}
+        , colorFactors(colorFactors)
 {
 }
 
@@ -41,9 +41,9 @@ void HdrHorizontalRegionProcessor::processRegion(RGBColor *result, const std::ui
         }
 
         result[samples - sample - 1] = ToRGBColor(
-                red / samplePixels / 4,
-                green / samplePixels / 4,
-                static_cast<uchar>(blue * blueCompensation / samplePixels / 4)
+                static_cast<uchar>(red * colorFactors[0] / samplePixels / 4),
+                static_cast<uchar>(green * colorFactors[1] / samplePixels / 4),
+                static_cast<uchar>(blue * colorFactors[2] / samplePixels / 4)
         );
     }
 }

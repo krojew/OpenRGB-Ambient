@@ -2,11 +2,14 @@
 // Created by Kamil Rojewski on 15.07.2021.
 //
 
+#include "ColorConversion.h"
+
 #include "Settings.h"
 
 QString Settings::SELECTED_CONTROLLERS_KEY = "SelectedControllers"; // NOLINT(cert-err58-cpp)
 QString Settings::CONTROLLER_REGIONS_KEY = "ControllerRegions"; // NOLINT(cert-err58-cpp)
 QString Settings::COOL_WHITE_COMPENSATION_KEY = "CoolWhiteCompensation"; // NOLINT(cert-err58-cpp)
+QString Settings::COLOR_TEMPERATURE_KEY = "ColorTemperature"; // NOLINT(cert-err58-cpp)
 
 QString Settings::TOP_SUFFIX = "_Top"; // NOLINT(cert-err58-cpp)
 QString Settings::BOTTOM_SUFFIX = "_Bottom"; // NOLINT(cert-err58-cpp)
@@ -27,6 +30,11 @@ Settings::Settings(const QString &file, QObject *parent)
     fillRegions(rightRegions, settings.value(CONTROLLER_REGIONS_KEY + RIGHT_SUFFIX).toHash());
 
     coolWhiteCompensation = settings.value(COOL_WHITE_COMPENSATION_KEY, true).toBool();
+    colorTemperatureIndex = std::clamp(
+            settings.value(COLOR_TEMPERATURE_KEY, colorTemperatureIndex).toInt(),
+            0,
+            static_cast<int>(std::extent_v<decltype(colorTemperatureFactors)>)
+    );
 }
 
 bool Settings::isControllerSelected(const std::string &location) const {
@@ -136,6 +144,19 @@ void Settings::setCoolWhiteCompensation(bool value)
 {
     coolWhiteCompensation = value;
     settings.setValue(COOL_WHITE_COMPENSATION_KEY, coolWhiteCompensation);
+
+    emit settingsChanged();
+}
+
+int Settings::colorTemperatureFactorIndex() const noexcept
+{
+    return colorTemperatureIndex;
+}
+
+void Settings::setColorTemperatureFactorIndex(int index)
+{
+    colorTemperatureIndex = index;
+    settings.setValue(COLOR_TEMPERATURE_KEY, colorTemperatureIndex);
 
     emit settingsChanged();
 }

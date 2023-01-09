@@ -8,6 +8,7 @@ NZXT CAM, at the moment, is very buggy. This plugin provides a lighter and more 
 * stable 60Hz refresh rate
 * shuts LEDs down along with the OS
 * less resource usage
+* configurable color temperature
 
 Note: currently confirmed to be working on Windows 10 and Windows 11.
 

@@ -1,3 +1,7 @@
+# [2.2.0]
+
+* Color temperature option.
+
 # [2.1.0]
 
 * Option to disable cool white compensation.

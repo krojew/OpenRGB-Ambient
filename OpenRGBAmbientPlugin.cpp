@@ -56,7 +56,7 @@ OpenRGBPluginInfo OpenRGBAmbientPlugin::GetPluginInfo()
     return {
             "OpenRGBAmbientPlugin",
             "Desktop ambient light support",
-            "2.1.0",
+            "2.2.0",
             "",
             "https://github.com/krojew/OpenRGB-Ambient",
             {},
@@ -143,6 +143,9 @@ void OpenRGBAmbientPlugin::updateProcessors()
 
     const auto blueCompensation = settings->compensateCoolWhite() ? coolWhiteBlueScale : 1.f;
 
+    auto colorFactors = colorTemperatureFactors[settings->colorTemperatureFactorIndex()];
+    colorFactors[2] *= blueCompensation;
+
     const auto &controllers = resourceManager->GetRGBControllers();
     for (const auto controller : controllers)
     {
@@ -155,7 +158,7 @@ void OpenRGBAmbientPlugin::updateProcessors()
                 settings->getBottomRegion(controller->location),
                 settings->getRightRegion(controller->location),
                 settings->getLeftRegion(controller->location),
-                blueCompensation,
+                colorFactors,
                 this
         );
     }

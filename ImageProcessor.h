@@ -7,6 +7,7 @@
 
 #include <string>
 #include <vector>
+#include <array>
 
 #include <QtGlobal>
 
@@ -28,7 +29,7 @@ public:
                    LedRange bottomRange,
                    LedRange rightRange,
                    LedRange leftRange,
-                   float blueCompensation,
+                   std::array<float, 3> colorFactors,
                    QObject *eventReceiver);
 
     void processSdrImage(const uchar *data, int width, int height);

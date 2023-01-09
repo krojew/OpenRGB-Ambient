@@ -4,9 +4,9 @@
 
 #include "SdrVerticalRegionProcessor.h"
 
-SdrVerticalRegionProcessor::SdrVerticalRegionProcessor(int samples, float blueCompensation)
-    : samples{samples}
-    , blueCompensation{blueCompensation}
+SdrVerticalRegionProcessor::SdrVerticalRegionProcessor(int samples, std::array<float, 3> colorFactors)
+        : samples{samples}
+        , colorFactors(colorFactors)
 {
 }
 
@@ -38,6 +38,10 @@ void SdrVerticalRegionProcessor::processRegion(RGBColor *result, const uchar *da
             }
         }
 
-        result[samples - sample - 1] = ToRGBColor(red / samplePixels, green / samplePixels, static_cast<uchar>(blue * blueCompensation / samplePixels));
+        result[samples - sample - 1] = ToRGBColor(
+                static_cast<uchar>(red * colorFactors[0] / samplePixels),
+                static_cast<uchar>(green  * colorFactors[1]/ samplePixels),
+                static_cast<uchar>(blue * colorFactors[2] / samplePixels)
+        );
     }
 }

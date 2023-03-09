@@ -1,3 +1,7 @@
+# [2.3.0]
+
+* Support for transition smoothing.
+
 # [2.2.0]
 
 * Color temperature option.

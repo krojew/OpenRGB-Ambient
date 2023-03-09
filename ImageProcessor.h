@@ -17,11 +17,22 @@
 #include "SdrVerticalRegionProcessor.h"
 #include "HdrHorizontalRegionProcessor.h"
 #include "HdrVerticalRegionProcessor.h"
+#include "ColorPostProcessor.h"
+#include "LedUpdateEvent.h"
 #include "LedRange.h"
 
 class QObject;
 
+class ImageProcessorBase
+{
+public:
+    virtual void processSdrImage(const uchar *data, int width, int height) = 0;
+    virtual void processHdrImage(const uint *data, int width, int height) = 0;
+};
+
+template<ColorPostProcessor CPP>
 class ImageProcessor final
+        : public ImageProcessorBase
 {
 public:
     ImageProcessor(std::string controllerLocation,
@@ -30,10 +41,61 @@ public:
                    LedRange rightRange,
                    LedRange leftRange,
                    std::array<float, 3> colorFactors,
-                   QObject *eventReceiver);
+                   CPP colorPostProcessor,
+                   QObject *eventReceiver)
+            : controllerLocation{std::move(controllerLocation)}
+            , eventReceiver{eventReceiver}
+            , rightRange{rightRange}
+            , leftRange{leftRange}
+            , bottomRange{bottomRange}
+            , topRange{topRange}
+            , topSdrProcessor{topRange.getLength(), colorFactors, colorPostProcessor}
+            , bottomSdrProcessor{bottomRange.getLength(), colorFactors, colorPostProcessor}
+            , leftSdrProcessor{leftRange.getLength(), colorFactors, colorPostProcessor}
+            , rightSdrProcessor{rightRange.getLength(), colorFactors, colorPostProcessor}
+            , topHdrProcessor{topRange.getLength(), colorFactors, colorPostProcessor}
+            , bottomHdrProcessor{bottomRange.getLength(), colorFactors, colorPostProcessor}
+            , leftHdrProcessor{leftRange.getLength(), colorFactors, colorPostProcessor}
+            , rightHdrProcessor{rightRange.getLength(), colorFactors, colorPostProcessor}
+            , colors(topRange.getLength() + bottomRange.getLength() + leftRange.getLength() + rightRange.getLength())
+    {
+    }
 
-    void processSdrImage(const uchar *data, int width, int height);
-    void processHdrImage(const uint *data, int width, int height);
+    void processSdrImage(const uchar *data, int width, int height) override
+    {
+        const auto sampleHeight = height / resolutionHeightDivisor;
+        const auto sampleWidth = width / resolutionWidthDivisor;
+
+        const auto realTop = std::min(topRange.from, topRange.to);
+        const auto realBottom = std::min(bottomRange.from, bottomRange.to);
+        const auto realRight = std::min(rightRange.from, rightRange.to);
+        const auto realLeft = std::min(leftRange.from, leftRange.to);
+
+        topSdrProcessor.processRegion(colors.data() + realTop, data, width, sampleHeight);
+        bottomSdrProcessor.processRegion(colors.data() + realBottom, data + 4 * width * (height - sampleHeight), width, sampleHeight);
+        leftSdrProcessor.processRegion(colors.data() + realLeft, data, sampleWidth, height, 0, width);
+        rightSdrProcessor.processRegion(colors.data() + realRight, data, sampleWidth, height, width - sampleWidth, width);
+
+        QCoreApplication::postEvent(eventReceiver, new LedUpdateEvent{controllerLocation, colors});
+    }
+
+    void processHdrImage(const uint *data, int width, int height) override
+    {
+        const auto sampleHeight = height / resolutionHeightDivisor;
+        const auto sampleWidth = width / resolutionHeightDivisor;
+
+        const auto realTop = std::min(topRange.from, topRange.to);
+        const auto realBottom = std::min(bottomRange.from, bottomRange.to);
+        const auto realRight = std::min(rightRange.from, rightRange.to);
+        const auto realLeft = std::min(leftRange.from, leftRange.to);
+
+        topHdrProcessor.processRegion(colors.data() + realTop, data, width, sampleHeight);
+        bottomHdrProcessor.processRegion(colors.data() + realBottom, data + width * (height - sampleHeight), width, sampleHeight);
+        leftHdrProcessor.processRegion(colors.data() + realLeft, data, sampleWidth, height, 0, width);
+        rightHdrProcessor.processRegion(colors.data() + realRight, data, sampleWidth, height, width - sampleWidth, width);
+
+        QCoreApplication::postEvent(eventReceiver, new LedUpdateEvent{controllerLocation, colors});
+    }
 
 private:
     static const int resolutionHeightDivisor = 10;
@@ -47,15 +109,15 @@ private:
     LedRange leftRange;
     LedRange rightRange;
 
-    SdrHorizontalRegionProcessor topSdrProcessor;
-    SdrHorizontalRegionProcessor bottomSdrProcessor;
-    SdrVerticalRegionProcessor leftSdrProcessor;
-    SdrVerticalRegionProcessor rightSdrProcessor;
+    SdrHorizontalRegionProcessor<CPP> topSdrProcessor;
+    SdrHorizontalRegionProcessor<CPP> bottomSdrProcessor;
+    SdrVerticalRegionProcessor<CPP> leftSdrProcessor;
+    SdrVerticalRegionProcessor<CPP> rightSdrProcessor;
 
-    HdrHorizontalRegionProcessor topHdrProcessor;
-    HdrHorizontalRegionProcessor bottomHdrProcessor;
-    HdrVerticalRegionProcessor leftHdrProcessor;
-    HdrVerticalRegionProcessor rightHdrProcessor;
+    HdrHorizontalRegionProcessor<CPP> topHdrProcessor;
+    HdrHorizontalRegionProcessor<CPP> bottomHdrProcessor;
+    HdrVerticalRegionProcessor<CPP> leftHdrProcessor;
+    HdrVerticalRegionProcessor<CPP> rightHdrProcessor;
 
     std::vector<RGBColor> colors;
 };

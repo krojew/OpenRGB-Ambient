@@ -10,6 +10,8 @@ QString Settings::SELECTED_CONTROLLERS_KEY = "SelectedControllers"; // NOLINT(ce
 QString Settings::CONTROLLER_REGIONS_KEY = "ControllerRegions"; // NOLINT(cert-err58-cpp)
 QString Settings::COOL_WHITE_COMPENSATION_KEY = "CoolWhiteCompensation"; // NOLINT(cert-err58-cpp)
 QString Settings::COLOR_TEMPERATURE_KEY = "ColorTemperature"; // NOLINT(cert-err58-cpp)
+QString Settings::SMOOTHING_KEY = "Smoothing"; // NOLINT(cert-err58-cpp)
+QString Settings::SMOOTHING_WEIGHT_KEY = "SmoothingWeight"; // NOLINT(cert-err58-cpp)
 
 QString Settings::TOP_SUFFIX = "_Top"; // NOLINT(cert-err58-cpp)
 QString Settings::BOTTOM_SUFFIX = "_Bottom"; // NOLINT(cert-err58-cpp)
@@ -35,6 +37,9 @@ Settings::Settings(const QString &file, QObject *parent)
             0,
             static_cast<int>(std::extent_v<decltype(colorTemperatureFactors)>)
     );
+
+    smoothing = settings.value(SMOOTHING_KEY, false).toBool();
+    smoothingWeight = settings.value(SMOOTHING_WEIGHT_KEY, 0.5).toFloat();
 }
 
 bool Settings::isControllerSelected(const std::string &location) const {
@@ -157,6 +162,32 @@ void Settings::setColorTemperatureFactorIndex(int index)
 {
     colorTemperatureIndex = index;
     settings.setValue(COLOR_TEMPERATURE_KEY, colorTemperatureIndex);
+
+    emit settingsChanged();
+}
+
+bool Settings::smoothTransitions() const noexcept
+{
+    return smoothing;
+}
+
+void Settings::setSmoothTransitions(bool value)
+{
+    smoothing = value;
+    settings.setValue(SMOOTHING_KEY, smoothing);
+
+    emit settingsChanged();
+}
+
+float Settings::smoothTransitionsWeight() const noexcept
+{
+    return smoothingWeight;
+}
+
+void Settings::setSmoothTransitionsWeight(float value)
+{
+    smoothingWeight = value;
+    settings.setValue(SMOOTHING_WEIGHT_KEY, smoothingWeight);
 
     emit settingsChanged();
 }

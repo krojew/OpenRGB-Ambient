@@ -5,6 +5,7 @@
 #include <QHBoxLayout>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QSlider>
 #include <QLabel>
 
 #include "ColorConversion.h"
@@ -63,7 +64,25 @@ SettingsTab::SettingsTab(ResourceManager *resourceManager, Settings &settings, Q
         settings.setCoolWhiteCompensation(state == Qt::Checked);
     });
     colorCorrectionLayout->addWidget(coolWhiteCompensationBtn);
-    colorCorrectionLayout->addStretch();
+
+    const auto smoothTransitionsBtn = new QCheckBox{"Smooth transitions"};
+    smoothTransitionsBtn->setChecked(settings.smoothTransitions());
+    colorCorrectionLayout->addWidget(smoothTransitionsBtn);
+
+    const auto smoothTransitionsWeightSlider = new QSlider{Qt::Horizontal, this};
+    smoothTransitionsWeightSlider->setEnabled(settings.smoothTransitions());
+    smoothTransitionsWeightSlider->setRange(1, 99);
+    smoothTransitionsWeightSlider->setValue(static_cast<int>(settings.smoothTransitionsWeight() * 100));
+    connect(smoothTransitionsWeightSlider, &QSlider::valueChanged, this, [&, smoothTransitionsWeightSlider](auto to) {
+        settings.setSmoothTransitionsWeight(static_cast<float>(smoothTransitionsWeightSlider->value()) * 0.01f);
+    });
+
+    colorCorrectionLayout->addWidget(smoothTransitionsWeightSlider);
+
+    connect(smoothTransitionsBtn, &QCheckBox::stateChanged, this, [&, smoothTransitionsWeightSlider](auto state) {
+        settings.setSmoothTransitions(state == Qt::Checked);
+        smoothTransitionsWeightSlider->setEnabled(settings.smoothTransitions());
+    });
 
     mainLayout->addLayout(colorCorrectionLayout);
 

@@ -2,7 +2,6 @@
 // Created by Kamil Rojewski on 15.07.2021.
 //
 
-#include <algorithm>
 #include <chrono>
 
 #include <QCoreApplication>
@@ -142,6 +141,8 @@ void OpenRGBAmbientPlugin::updateProcessors()
     processors.clear();
 
     const auto blueCompensation = settings->compensateCoolWhite() ? coolWhiteBlueScale : 1.f;
+    const auto smoothTransitions = settings->smoothTransitions();
+    const auto smoothTransitionsWeight = settings->smoothTransitionsWeight();
 
     auto colorFactors = colorTemperatureFactors[settings->colorTemperatureFactorIndex()];
     colorFactors[2] *= blueCompensation;
@@ -152,15 +153,7 @@ void OpenRGBAmbientPlugin::updateProcessors()
         if (!settings->isControllerSelected(controller->location))
             continue;
 
-        processors.emplace_back(
-                controller->location,
-                settings->getTopRegion(controller->location),
-                settings->getBottomRegion(controller->location),
-                settings->getRightRegion(controller->location),
-                settings->getLeftRegion(controller->location),
-                colorFactors,
-                this
-        );
+        processors.emplace_back(smoothTransitions ? createProcessor(controller, colorFactors, SmoothingColorPostProcessor{smoothTransitionsWeight}) : createProcessor(controller, colorFactors, IdentityColorPostProcessor{}));
     }
 
     stopFlag = false;
@@ -238,18 +231,16 @@ void OpenRGBAmbientPlugin::processImage(const std::shared_ptr<ID3D11Texture2D> &
     {
         if (desc.Format == DXGI_FORMAT_R10G10B10A2_UNORM)
         {
-            for (auto &processor : processors)
+            for (const auto &processor : processors)
             {
-                processor.processHdrImage(static_cast<const std::uint32_t *>(mapped.pData), static_cast<int>(desc.Width),
-                                          static_cast<int>(desc.Height));
+                processor->processHdrImage(static_cast<const std::uint32_t *>(mapped.pData), static_cast<int>(desc.Width), static_cast<int>(desc.Height));
             }
         }
         else
         {
-            for (auto &processor : processors)
+            for (const auto &processor : processors)
             {
-                processor.processSdrImage(static_cast<const uchar *>(mapped.pData), static_cast<int>(desc.Width),
-                                          static_cast<int>(desc.Height));
+                processor->processSdrImage(static_cast<const uchar *>(mapped.pData), static_cast<int>(desc.Width), static_cast<int>(desc.Height));
             }
         }
     }
@@ -280,4 +271,19 @@ void OpenRGBAmbientPlugin::processUpdate(const LedUpdateEvent &event)
 
         (*controller)->UpdateLEDs();
     }
+}
+
+template<ColorPostProcessor CPP>
+std::unique_ptr<ImageProcessorBase> OpenRGBAmbientPlugin::createProcessor(RGBController *controller, std::array<float, 3> colorFactors, CPP colorPostProcessor)
+{
+    return std::make_unique<ImageProcessor<CPP>>(
+            controller->location,
+            settings->getTopRegion(controller->location),
+            settings->getBottomRegion(controller->location),
+            settings->getRightRegion(controller->location),
+            settings->getLeftRegion(controller->location),
+            colorFactors,
+            colorPostProcessor,
+            this
+    );
 }

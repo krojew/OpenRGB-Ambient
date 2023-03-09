@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.19)
 project(openrgb_ambient)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
@@ -17,7 +17,7 @@ if (WIN32)
     add_definitions(-D_MBCS -DWIN32 -D_CRT_SECURE_NO_WARNINGS -D_WINSOCKAPI_ -D_WINSOCK_DEPRECATED_NO_WARNINGS -DWIN32_LEAN_AND_MEAN -DNOMINMAX)
 endif()
 
-add_library(${PROJECT_NAME} SHARED OpenRGBAmbientPlugin.h OpenRGBAmbientPlugin.cpp DeviceList.cpp DeviceList.h Settings.cpp Settings.h ScreenCapture.cpp ScreenCapture.h Limiter.cpp Limiter.h ReleaseWrapper.h SettingsTab.cpp SettingsTab.h RegionsWidget.cpp RegionsWidget.h RegionWidget.cpp RegionWidget.h LedUpdateEvent.h LedUpdateEvent.cpp ImageProcessor.cpp ImageProcessor.h LedRange.h SdrHorizontalRegionProcessor.cpp SdrHorizontalRegionProcessor.h SdrVerticalRegionProcessor.cpp SdrVerticalRegionProcessor.h ColorConversion.h HdrVerticalRegionProcessor.cpp HdrVerticalRegionProcessor.h HdrHorizontalRegionProcessor.cpp HdrHorizontalRegionProcessor.h)
+add_library(${PROJECT_NAME} SHARED OpenRGBAmbientPlugin.h OpenRGBAmbientPlugin.cpp DeviceList.cpp DeviceList.h Settings.cpp Settings.h ScreenCapture.cpp ScreenCapture.h Limiter.cpp Limiter.h ReleaseWrapper.h SettingsTab.cpp SettingsTab.h RegionsWidget.cpp RegionsWidget.h RegionWidget.cpp RegionWidget.h LedUpdateEvent.h LedUpdateEvent.cpp ImageProcessor.h LedRange.h SdrHorizontalRegionProcessor.h SdrVerticalRegionProcessor.h ColorConversion.h HdrVerticalRegionProcessor.h HdrHorizontalRegionProcessor.h ColorPostProcessor.h)
 
 if (NOT CMAKE_PREFIX_PATH)
     message(WARNING "CMAKE_PREFIX_PATH is not defined, you may need to set it "

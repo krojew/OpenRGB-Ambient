@@ -45,6 +45,12 @@ public:
     [[nodiscard]] int colorTemperatureFactorIndex() const noexcept;
     void setColorTemperatureFactorIndex(int index);
 
+    [[nodiscard]] bool smoothTransitions() const noexcept;
+    void setSmoothTransitions(bool value);
+
+    [[nodiscard]] float smoothTransitionsWeight() const noexcept;
+    void setSmoothTransitionsWeight(float value);
+
 signals:
     void settingsChanged();
 
@@ -53,6 +59,8 @@ private:
     static QString CONTROLLER_REGIONS_KEY;
     static QString COOL_WHITE_COMPENSATION_KEY;
     static QString COLOR_TEMPERATURE_KEY;
+    static QString SMOOTHING_KEY;
+    static QString SMOOTHING_WEIGHT_KEY;
 
     static QString TOP_SUFFIX;
     static QString BOTTOM_SUFFIX;
@@ -73,6 +81,9 @@ private:
     bool coolWhiteCompensation = true;
 
     int colorTemperatureIndex = 55; // 6500K
+
+    bool smoothing = false;
+    float smoothingWeight = 0.5;
 
     void syncSelectedControllers();
     void syncRegions(const RegionMap &map, const QString &key);

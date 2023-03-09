@@ -8,6 +8,7 @@
 #include <atomic>
 #include <thread>
 #include <vector>
+#include <array>
 
 #include <d3d11.h>
 
@@ -65,7 +66,7 @@ private:
     std::atomic_bool preview{false};
     std::atomic_bool pauseCapture{false};
 
-    std::vector<ImageProcessor> processors;
+    std::vector<std::unique_ptr<ImageProcessorBase>> processors;
 
     std::thread captureThread;
 
@@ -74,6 +75,9 @@ private:
 
     void processImage(const std::shared_ptr<ID3D11Texture2D> &image);
     void processUpdate(const LedUpdateEvent &event);
+
+    template<ColorPostProcessor CPP>
+    std::unique_ptr<ImageProcessorBase> createProcessor(RGBController *controller, std::array<float, 3> colorFactors, CPP colorPostProcessor);
 };
 
 #endif //OPENRGB_AMBIENT_OPENRGBAMBIENTPLUGIN_H

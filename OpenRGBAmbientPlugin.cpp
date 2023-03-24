@@ -55,7 +55,7 @@ OpenRGBPluginInfo OpenRGBAmbientPlugin::GetPluginInfo()
     return {
             "OpenRGBAmbientPlugin",
             "Desktop ambient light support",
-            "2.3.0",
+            "2.3.1",
             "",
             "https://github.com/krojew/OpenRGB-Ambient",
             {},
@@ -92,7 +92,12 @@ void OpenRGBAmbientPlugin::Load(bool dark_theme, ResourceManager *resource_manag
     const auto hwnd = CreateWindowEx(0, END_SESSION_WND_CLASS, "", 0, 0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr);
     SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
-    startCapture();
+    resourceManager->RegisterDeviceListChangeCallback([](auto widget) {
+        const auto realSettings = static_cast<Settings *>(widget);
+        QMetaObject::invokeMethod(realSettings, &Settings::settingsChanged, Qt::QueuedConnection);
+    }, settings);
+
+    updateProcessors();
 }
 
 QWidget *OpenRGBAmbientPlugin::GetWidget()
@@ -106,10 +111,6 @@ QWidget *OpenRGBAmbientPlugin::GetWidget()
         const auto list = static_cast<SettingsTab *>(ui);
         QMetaObject::invokeMethod(list, &SettingsTab::controllerListChanged, Qt::QueuedConnection);
     }, ui);
-    resourceManager->RegisterDeviceListChangeCallback([](auto widget) {
-        const auto realSettings = static_cast<Settings *>(widget);
-        QMetaObject::invokeMethod(realSettings, &Settings::settingsChanged, Qt::QueuedConnection);
-    }, settings);
 
     return ui;
 }

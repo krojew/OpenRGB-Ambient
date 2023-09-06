@@ -12,5 +12,6 @@ NZXT CAM, at the moment, is very buggy. This plugin provides a lighter and more 
 
 Note: currently confirmed to be working on Windows 10 and Windows 11.
 
-Versions older than **2.0.0** should be used with OpenRGB **0.6**, while 2.0.0 or newer should work with
-OpenRGB **0.7** or newer. 
+Versions older than **2.0.0** should be used with OpenRGB **0.6**, while **2.3** should work with
+OpenRGB **0.7** or **0.8**, and **2.4** is compatible with OpenRGB **0.9**. Yes - this is a mess, 
+blame OpenRGB and their lack of stable plugin API.

@@ -1,3 +1,7 @@
+# [2.4.0]
+
+* Compatibility with 0.9.
+
 # [2.3.1]
 
 * Fixed not starting capture on start with OpenRGB >= 8.0.

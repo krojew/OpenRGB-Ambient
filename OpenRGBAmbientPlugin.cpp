@@ -55,7 +55,7 @@ OpenRGBPluginInfo OpenRGBAmbientPlugin::GetPluginInfo()
     return {
             "OpenRGBAmbientPlugin",
             "Desktop ambient light support",
-            "2.3.1",
+            "2.4.0",
             "",
             "https://github.com/krojew/OpenRGB-Ambient",
             {},
@@ -75,7 +75,7 @@ void OpenRGBAmbientPlugin::Load(bool dark_theme, ResourceManager *resource_manag
 {
     resourceManager = resource_manager_ptr;
 
-    settings = new Settings{QString::fromStdString(resourceManager->GetConfigurationDirectory() + "/OpenRGBAmbientPlugin.ini"), this};
+    settings = new Settings{QString::fromStdString((resourceManager->GetConfigurationDirectory() / "OpenRGBAmbientPlugin.ini").string()), this};
     connect(settings, &Settings::settingsChanged, this, &OpenRGBAmbientPlugin::updateProcessors);
 
     connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, &OpenRGBAmbientPlugin::turnOffLeds, Qt::DirectConnection);

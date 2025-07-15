@@ -7,7 +7,7 @@
 
 #include <QWidget>
 
-class ResourceManager;
+class ResourceManagerInterface;
 class Settings;
 class QLabel;
 class QImage;
@@ -18,7 +18,7 @@ class SettingsTab
     Q_OBJECT
 
 public:
-    SettingsTab(ResourceManager *resourceManager, Settings &settings, QWidget *parent = nullptr);
+    SettingsTab(ResourceManagerInterface *resourceManager, Settings &settings, QWidget *parent = nullptr);
     ~SettingsTab() override = default;
 
 public slots:

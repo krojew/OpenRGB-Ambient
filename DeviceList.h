@@ -7,7 +7,7 @@
 
 #include <QWidget>
 
-class ResourceManager;
+class ResourceManagerInterface;
 class QListWidgetItem;
 class QListWidget;
 class Settings;
@@ -18,7 +18,7 @@ class DeviceList
     Q_OBJECT
 
 public:
-    DeviceList(ResourceManager *resourceManager, Settings &settings, QWidget *parent = nullptr);
+    DeviceList(ResourceManagerInterface *resourceManager, Settings &settings, QWidget *parent = nullptr);
     ~DeviceList() override = default;
 
 signals:
@@ -29,7 +29,7 @@ public slots:
     void saveCheckState(QListWidgetItem *item);
 
 private:
-    ResourceManager *resourceManager;
+    ResourceManagerInterface *resourceManager;
     Settings &settings;
     QListWidget *deviceList;
 };

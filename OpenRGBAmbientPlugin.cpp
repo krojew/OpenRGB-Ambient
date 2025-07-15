@@ -71,7 +71,7 @@ unsigned int OpenRGBAmbientPlugin::GetPluginAPIVersion()
     return OPENRGB_PLUGIN_API_VERSION;
 }
 
-void OpenRGBAmbientPlugin::Load(bool dark_theme, ResourceManager *resource_manager_ptr)
+void OpenRGBAmbientPlugin::Load(ResourceManagerInterface *resource_manager_ptr)
 {
     resourceManager = resource_manager_ptr;
 

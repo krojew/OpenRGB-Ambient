@@ -13,7 +13,9 @@
 
 #include "RegionsWidget.h"
 
-RegionsWidget::RegionsWidget(ResourceManager *resourceManager, Settings &settings, QWidget *parent)
+#include <RGBController.h>
+
+RegionsWidget::RegionsWidget(ResourceManagerInterface *resourceManager, Settings &settings, QWidget *parent)
     : QWidget{parent}
     , resourceManager{resourceManager}
     , settings{settings}
@@ -100,7 +102,7 @@ void RegionsWidget::selectController(const QString &location)
 void RegionsWidget::showCurrentLeds(int from, int to)
 {
     const auto &controllers = resourceManager->GetRGBControllers();
-    const auto controller = std::find_if(std::begin(controllers), std::end(controllers), [&](auto controller) {
+    const auto controller = std::ranges::find_if(controllers, [&](auto controller) {
         return controller->location == currentLocation;
     });
 

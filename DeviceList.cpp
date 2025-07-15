@@ -12,7 +12,9 @@
 
 #include "DeviceList.h"
 
-DeviceList::DeviceList(ResourceManager *resourceManager, Settings &settings, QWidget *parent)
+#include <RGBController.h>
+
+DeviceList::DeviceList(ResourceManagerInterface *resourceManager, Settings &settings, QWidget *parent)
     : QWidget{parent}
     , resourceManager{resourceManager}
     , settings{settings}

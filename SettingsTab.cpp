@@ -15,7 +15,7 @@
 
 #include "SettingsTab.h"
 
-SettingsTab::SettingsTab(ResourceManager *resourceManager, Settings &settings, QWidget *parent)
+SettingsTab::SettingsTab(ResourceManagerInterface *resourceManager, Settings &settings, QWidget *parent)
     : QWidget{parent}
 {
     const auto mainLayout = new QVBoxLayout{this};

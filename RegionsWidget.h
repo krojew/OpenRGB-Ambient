@@ -9,7 +9,7 @@
 
 #include <QWidget>
 
-class ResourceManager;
+class ResourceManagerInterface;
 class RegionWidget;
 class Settings;
 
@@ -19,14 +19,14 @@ class RegionsWidget
     Q_OBJECT
 
 public:
-    RegionsWidget(ResourceManager *resourceManager, Settings &settings, QWidget *parent = nullptr);
+    RegionsWidget(ResourceManagerInterface *resourceManager, Settings &settings, QWidget *parent = nullptr);
     ~RegionsWidget() override = default;
 
 public slots:
     void selectController(const QString &location);
 
 private:
-    ResourceManager *resourceManager = nullptr;
+    ResourceManagerInterface *resourceManager = nullptr;
     Settings &settings;
 
     RegionWidget *top = nullptr;

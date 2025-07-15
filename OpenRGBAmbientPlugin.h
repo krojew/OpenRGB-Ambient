@@ -38,7 +38,7 @@ public:
 
     unsigned int GetPluginAPIVersion() override;
 
-    void Load(bool dark_theme, ResourceManager *resource_manager_ptr) override;
+    void Load(ResourceManagerInterface *resource_manager_ptr) override;
 
     QWidget *GetWidget() override;
 
@@ -59,7 +59,7 @@ signals:
 private:
     static const char *END_SESSION_WND_CLASS;
 
-    ResourceManager *resourceManager = nullptr;
+    ResourceManagerInterface *resourceManager = nullptr;
     Settings *settings = nullptr;
 
     std::atomic_bool stopFlag{false};

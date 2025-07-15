@@ -127,7 +127,7 @@ QMenu *OpenRGBAmbientPlugin::GetTrayMenu()
 
 void OpenRGBAmbientPlugin::Unload()
 {
-    stopCapture();
+    turnOffLeds();
 }
 
 void OpenRGBAmbientPlugin::setPreview(bool enabled)

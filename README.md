@@ -1,5 +1,7 @@
 OpenRGB plugin inspired by NZXT HUE 2 Ambient Lighting, although it works with anything supported by OpenRGB.
 
+Note: this plugin in no way endorses NZXT or their products, especially given their [anti-consumer practices](https://www.youtube.com/watch?v=0pomC1CfpC0).
+
 NZXT CAM, at the moment, is very buggy. This plugin provides a lighter and more stable alternative:
 
 * no flickering

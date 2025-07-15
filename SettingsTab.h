@@ -22,7 +22,7 @@ public:
     ~SettingsTab() override = default;
 
 public slots:
-    void updatePreview(const QImage &image);
+    void updatePreview(const QImage &image) const;
 
 signals:
     void controllerListChanged();

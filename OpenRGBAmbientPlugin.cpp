@@ -107,10 +107,15 @@ QWidget *OpenRGBAmbientPlugin::GetWidget()
     connect(ui, &SettingsTab::previewChanged, this, &OpenRGBAmbientPlugin::setPreview);
     connect(ui, &SettingsTab::settingsVisibilityChanged, this, &OpenRGBAmbientPlugin::setPauseCapture);
 
-    resourceManager->RegisterDeviceListChangeCallback([](auto ui) {
+    emit ui->controllerListChanged();
+
+    const auto refreshList = [](auto ui) {
         const auto list = static_cast<SettingsTab *>(ui);
         QMetaObject::invokeMethod(list, &SettingsTab::controllerListChanged, Qt::QueuedConnection);
-    }, ui);
+    };
+
+    resourceManager->RegisterDeviceListChangeCallback(refreshList, ui);
+    resourceManager->RegisterDetectionEndCallback(refreshList, ui);
 
     return ui;
 }

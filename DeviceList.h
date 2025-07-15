@@ -25,8 +25,8 @@ signals:
     void controllerSelected(const QString &location);
 
 public slots:
-    void fillControllerList();
-    void saveCheckState(QListWidgetItem *item);
+    void fillControllerList() const;
+    void saveCheckState(QListWidgetItem *item) const;
 
 private:
     ResourceManagerInterface *resourceManager;

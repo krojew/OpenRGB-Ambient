@@ -93,7 +93,7 @@ SettingsTab::SettingsTab(ResourceManagerInterface *resourceManager, Settings &se
     mainLayout->addWidget(deviceList);
 }
 
-void SettingsTab::updatePreview(const QImage &image)
+void SettingsTab::updatePreview(const QImage &image) const
 {
     preview->setPixmap(QPixmap::fromImage(image));
 }

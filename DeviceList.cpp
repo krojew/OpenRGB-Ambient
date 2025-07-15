@@ -23,7 +23,7 @@ DeviceList::DeviceList(ResourceManagerInterface *resourceManager, Settings &sett
 
     deviceList = new QListWidget{};
     connect(deviceList, &QListWidget::itemChanged, this, &DeviceList::saveCheckState);
-    connect(deviceList, &QListWidget::currentItemChanged, this, [=](auto current, auto previous) {
+    connect(deviceList, &QListWidget::currentItemChanged, this, [this](auto current, auto previous) {
         if (current != nullptr)
             emit controllerSelected(current->data(Qt::UserRole).toString());
     });
@@ -31,19 +31,19 @@ DeviceList::DeviceList(ResourceManagerInterface *resourceManager, Settings &sett
     layout->addWidget(deviceList);
 }
 
-void DeviceList::fillControllerList()
+void DeviceList::fillControllerList() const
 {
     deviceList->clear();
 
     const auto &controllers = resourceManager->GetRGBControllers();
     for (const auto controller : controllers)
     {
-        if (std::none_of(std::begin(controller->modes), std::end(controller->modes), [](const auto &mode) {
-            return mode.name == "Direct";
-        }))
-        {
-            continue;
-        }
+        // if (std::ranges::none_of(controller->modes, [](const auto &mode) {
+        //     return mode.name == "Direct";
+        // }))
+        // {
+        //     continue;
+        // }
 
         const auto item = new QListWidgetItem{QString::fromStdString(controller->name)};
         item->setCheckState(settings.isControllerSelected(controller->location) ? Qt::Checked : Qt::Unchecked);
@@ -53,7 +53,7 @@ void DeviceList::fillControllerList()
     }
 }
 
-void DeviceList::saveCheckState(QListWidgetItem *item)
+void DeviceList::saveCheckState(QListWidgetItem *item) const
 {
     const auto location = item->data(Qt::UserRole).toString().toStdString();
     if (item->checkState() == Qt::Checked)

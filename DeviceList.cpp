@@ -38,12 +38,12 @@ void DeviceList::fillControllerList() const
     const auto &controllers = resourceManager->GetRGBControllers();
     for (const auto controller : controllers)
     {
-        // if (std::ranges::none_of(controller->modes, [](const auto &mode) {
-        //     return mode.name == "Direct";
-        // }))
-        // {
-        //     continue;
-        // }
+        if (std::ranges::none_of(controller->modes, [](const auto &mode) {
+            return mode.name == "Direct";
+        }))
+        {
+            continue;
+        }
 
         const auto item = new QListWidgetItem{QString::fromStdString(controller->name)};
         item->setCheckState(settings.isControllerSelected(controller->location) ? Qt::Checked : Qt::Unchecked);

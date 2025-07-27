@@ -199,6 +199,11 @@ void OpenRGBAmbientPlugin::stopCapture()
 
 void OpenRGBAmbientPlugin::turnOffLeds()
 {
+    // since this method can be called from various places and resourceManager might be gone, there's a need to guard
+    // from nullptr access
+    if (stopFlag.load(std::memory_order::relaxed))
+        return;
+
     stopCapture();
 
     const auto &controllers = resourceManager->GetRGBControllers();

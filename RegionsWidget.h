@@ -24,6 +24,7 @@ public:
 
 public slots:
     void selectController(const QString &location);
+    void setPreview(bool enabled);
 
 private:
     ResourceManagerInterface *resourceManager = nullptr;
@@ -35,8 +36,10 @@ private:
     RegionWidget *left = nullptr;
 
     std::string currentLocation;
+    bool preview = false;
 
     void showCurrentLeds(int from, int to);
+    void clearCurrentLeds();
 };
 
 #endif //OPENRGB_AMBIENT_REGIONSWIDGET_H

@@ -22,6 +22,7 @@ public:
 
 signals:
     void regionChanged(int from, int to);
+    void adjustmentFinished();
 
 private:
     QSlider *fromSlider = nullptr;

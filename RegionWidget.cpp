@@ -16,12 +16,18 @@ RegionWidget::RegionWidget(QWidget *parent)
     connect(fromSlider, &QSlider::valueChanged, this, [=](auto from) {
         emit regionChanged(from, toSlider->value());
     });
+    connect(fromSlider, &QSlider::sliderReleased, this, [=]() {
+        emit adjustmentFinished();
+    });
 
     layout->addWidget(fromSlider);
 
     toSlider = new QSlider{Qt::Horizontal};
     connect(toSlider, &QSlider::valueChanged, this, [=](auto to) {
         emit regionChanged(fromSlider->value(), to);
+    });
+    connect(toSlider, &QSlider::sliderReleased, this, [=]() {
+        emit adjustmentFinished();
     });
 
     layout->addWidget(toSlider);

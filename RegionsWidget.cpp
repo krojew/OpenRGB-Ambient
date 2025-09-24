@@ -27,8 +27,13 @@ RegionsWidget::RegionsWidget(ResourceManagerInterface *resourceManager, Settings
         if (!currentLocation.empty())
         {
             this->settings.setTopRegion(currentLocation, {from, to});
-            showCurrentLeds(from, to);
+            if (!preview)
+                showCurrentLeds(from, to);
         }
+    });
+    connect(top, &RegionWidget::adjustmentFinished, this, [=]() {
+        if (!preview)
+            clearCurrentLeds();
     });
 
     layout->addRow("Top", top);
@@ -38,8 +43,13 @@ RegionsWidget::RegionsWidget(ResourceManagerInterface *resourceManager, Settings
         if (!currentLocation.empty())
         {
             this->settings.setBottomRegion(currentLocation, {from, to});
-            showCurrentLeds(from, to);
+            if (!preview)
+                showCurrentLeds(from, to);
         }
+    });
+    connect(bottom, &RegionWidget::adjustmentFinished, this, [=]() {
+        if (!preview)
+            clearCurrentLeds();
     });
 
     layout->addRow("Bottom", bottom);
@@ -49,8 +59,13 @@ RegionsWidget::RegionsWidget(ResourceManagerInterface *resourceManager, Settings
         if (!currentLocation.empty())
         {
             this->settings.setRightRegion(currentLocation, {from, to});
-            showCurrentLeds(from, to);
+            if (!preview)
+                showCurrentLeds(from, to);
         }
+    });
+    connect(right, &RegionWidget::adjustmentFinished, this, [=]() {
+        if (!preview)
+            clearCurrentLeds();
     });
 
     layout->addRow("Right", right);
@@ -60,8 +75,13 @@ RegionsWidget::RegionsWidget(ResourceManagerInterface *resourceManager, Settings
         if (!currentLocation.empty())
         {
             this->settings.setLeftRegion(currentLocation, {from, to});
-            showCurrentLeds(from, to);
+            if (!preview)
+                showCurrentLeds(from, to);
         }
+    });
+    connect(left, &RegionWidget::adjustmentFinished, this, [=]() {
+        if (!preview)
+            clearCurrentLeds();
     });
 
     layout->addRow("Left", left);
@@ -124,4 +144,26 @@ void RegionsWidget::showCurrentLeds(int from, int to)
         (*controller)->SetLED(i, 0);
 
     (*controller)->UpdateLEDs();
+}
+
+void RegionsWidget::clearCurrentLeds()
+{
+    const auto &controllers = resourceManager->GetRGBControllers();
+    const auto controller = std::ranges::find_if(controllers, [&](auto controller) {
+        return controller->location == currentLocation;
+    });
+
+    if (controller == std::end(controllers))
+        return;
+
+    const auto len = (*controller)->leds.size();
+    for (auto i = 0; i < len; ++i)
+        (*controller)->SetLED(i, 0);
+
+    (*controller)->UpdateLEDs();
+}
+
+void RegionsWidget::setPreview(bool enabled)
+{
+    preview = enabled;
 }

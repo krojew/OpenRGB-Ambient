@@ -238,7 +238,8 @@ void OpenRGBAmbientPlugin::processImage(const std::shared_ptr<ID3D11Texture2D> &
     D3D11_MAPPED_SUBRESOURCE mapped;
     context->Map(image.get(), 0, D3D11_MAP_READ, 0, &mapped);
 
-    if (!pauseCapture)
+    // When preview is enabled, process frames in real-time even if settings tab is visible (pauseCapture set).
+    if (!pauseCapture || preview)
     {
         // If width = 1920 and bytesPerPixel = 4, a tightly packed buffer would have RowPitch = 7680 bytes.
         // But a GPU might align rows to 8192 bytes, so RowPitch = 8192. Then stridePixels = 8192 / 4 = 2048.

@@ -24,7 +24,7 @@ public:
     {
     }
 
-    void processRegion(RGBColor *result, const std::uint32_t *data, int width, int height) const
+    void processRegion(RGBColor *result, const std::uint32_t *data, int width, int height, int stridePixels) const
     {
         if (samples <= 0) {
             return;
@@ -44,7 +44,7 @@ public:
                 const auto currentWidth = (sample + 1) * sampleWidth;
                 for (auto x = sample * sampleWidth; x < currentWidth; ++x)
                 {
-                    const auto colors = data[y * width + x];
+                    const auto colors = data[y * stridePixels + x];
                     const ushort curRed = colors & 0x3ff;
                     const ushort curGreen = (colors >> 10) & 0x3ff;
                     const ushort curBlue = (colors >> 20) & 0x3ff;

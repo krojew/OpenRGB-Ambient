@@ -240,27 +240,33 @@ void OpenRGBAmbientPlugin::processImage(const std::shared_ptr<ID3D11Texture2D> &
 
     if (!pauseCapture)
     {
+        // If width = 1920 and bytesPerPixel = 4, a tightly packed buffer would have RowPitch = 7680 bytes.
+        // But a GPU might align rows to 8192 bytes, so RowPitch = 8192. Then stridePixels = 8192 / 4 = 2048.
+        // To index pixel (x, y), you must use data[y * stridePixels + x], not data[y * width + x].
+        const int stridePixels = static_cast<int>(mapped.RowPitch) / 4;
         if (desc.Format == DXGI_FORMAT_R10G10B10A2_UNORM)
         {
             for (const auto &processor : processors)
             {
-                processor->processHdrImage(static_cast<const std::uint32_t *>(mapped.pData), static_cast<int>(desc.Width), static_cast<int>(desc.Height));
+                processor->processHdrImage(static_cast<const std::uint32_t *>(mapped.pData), static_cast<int>(desc.Width), static_cast<int>(desc.Height), stridePixels);
             }
         }
         else
         {
             for (const auto &processor : processors)
             {
-                processor->processSdrImage(static_cast<const uchar *>(mapped.pData), static_cast<int>(desc.Width), static_cast<int>(desc.Height));
+                processor->processSdrImage(static_cast<const uchar *>(mapped.pData), static_cast<int>(desc.Width), static_cast<int>(desc.Height), stridePixels);
             }
         }
     }
 
     if (preview && desc.Format != DXGI_FORMAT_R10G10B10A2_UNORM)
     {
-        QImage previewImg{static_cast<const uchar *>(mapped.pData), static_cast<int>(desc.Width), static_cast<int>(desc.Height), QImage::Format_RGB32};
+        QImage previewImg{static_cast<const uchar *>(mapped.pData), static_cast<int>(desc.Width), static_cast<int>(desc.Height), static_cast<int>(mapped.RowPitch), QImage::Format_RGB32};
         emit previewUpdated(previewImg.copy());
     }
+
+    context->Unmap(image.get(), 0);
 }
 
 void OpenRGBAmbientPlugin::processUpdate(const LedUpdateEvent &event)

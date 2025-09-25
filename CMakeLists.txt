@@ -7,9 +7,12 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-set(QT_VERSION 5)
+if (NOT QT_VERSION)
+    set(QT_VERSION 5)
+endif()
+
 set(REQUIRED_LIBS Core Gui Widgets)
-set(REQUIRED_LIBS_QUALIFIED Qt5::Core Qt5::Gui Qt5::Widgets)
+set(REQUIRED_LIBS_QUALIFIED Qt${QT_VERSION}::Core Qt${QT_VERSION}::Gui Qt${QT_VERSION}::Widgets)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
 
@@ -17,7 +20,7 @@ add_library(${PROJECT_NAME} SHARED OpenRGBAmbientPlugin.h OpenRGBAmbientPlugin.c
 
 if (WIN32)
     add_definitions(-D_MBCS -DWIN32 -D_CRT_SECURE_NO_WARNINGS -D_WINSOCKAPI_ -D_WINSOCK_DEPRECATED_NO_WARNINGS -DWIN32_LEAN_AND_MEAN -DNOMINMAX)
-    target_include_directories(${PROJECT_NAME} PUBLIC OpenRGB/dependencies/hidapi)
+    target_include_directories(${PROJECT_NAME} PUBLIC OpenRGB/dependencies/hidapi-win/include)
 endif()
 
 if (NOT CMAKE_PREFIX_PATH)
@@ -28,7 +31,7 @@ endif ()
 find_package(Qt${QT_VERSION} COMPONENTS ${REQUIRED_LIBS} REQUIRED)
 find_package(DirectX11)
 target_link_libraries(${PROJECT_NAME} ${REQUIRED_LIBS_QUALIFIED})
-target_include_directories(${PROJECT_NAME} PRIVATE OpenRGB OpenRGB/i2c_smbus OpenRGB/net_port OpenRGB/RGBController OpenRGB/dependencies/json OpenRGB/qt OpenRBB/hidapi_wrapper)
+target_include_directories(${PROJECT_NAME} PRIVATE OpenRGB OpenRGB/i2c_smbus OpenRGB/net_port OpenRGB/RGBController OpenRGB/dependencies/json OpenRGB/qt OpenRGB/hidapi_wrapper OpenRGB/SPDAccessor)
 
 if (WIN32)
     target_link_libraries(${PROJECT_NAME} ${DirectX11_LIBRARY})

@@ -38,6 +38,7 @@ SettingsTab::SettingsTab(ResourceManagerInterface *resourceManager, Settings &se
     topLayout->addLayout(previewLayout);
 
     const auto regionsWidget = new RegionsWidget{resourceManager, settings};
+    connect(this, &SettingsTab::previewChanged, regionsWidget, &RegionsWidget::setPreview);
     topLayout->addWidget(regionsWidget);
 
     mainLayout->addLayout(topLayout);

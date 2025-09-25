@@ -24,7 +24,7 @@ public:
     {
     }
 
-    void processRegion(RGBColor *result, const uchar *data, int width, int height) const
+    void processRegion(RGBColor *result, const uchar *data, int width, int height, int stridePixels) const
     {
         if (samples <= 0) {
             return;
@@ -45,9 +45,9 @@ public:
                 for (auto x = sample * sampleWidth; x < currentWidth; ++x)
                 {
                     // bgr
-                    red += data[4 * (y * width + x) + 2];
-                    green += data[4 * (y * width + x) + 1];
-                    blue += data[4 * (y * width + x)];
+                    red += data[4 * (y * stridePixels + x) + 2];
+                    green += data[4 * (y * stridePixels + x) + 1];
+                    blue += data[4 * (y * stridePixels + x)];
                 }
             }
 

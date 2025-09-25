@@ -10,6 +10,7 @@
 #include <array>
 
 #include <QtGlobal>
+#include <QCoreApplication>
 
 #include <RGBController.h>
 
@@ -26,8 +27,8 @@ class QObject;
 class ImageProcessorBase
 {
 public:
-    virtual void processSdrImage(const uchar *data, int width, int height) = 0;
-    virtual void processHdrImage(const uint *data, int width, int height) = 0;
+    virtual void processSdrImage(const uchar *data, int width, int height, int stridePixels) = 0;
+    virtual void processHdrImage(const uint *data, int width, int height, int stridePixels) = 0;
 };
 
 template<ColorPostProcessor CPP>
@@ -61,7 +62,7 @@ public:
     {
     }
 
-    void processSdrImage(const uchar *data, int width, int height) override
+    void processSdrImage(const uchar *data, int width, int height, int stridePixels) override
     {
         const auto sampleHeight = height / resolutionHeightDivisor;
         const auto sampleWidth = width / resolutionWidthDivisor;
@@ -71,28 +72,28 @@ public:
         const auto realRight = std::min(rightRange.from, rightRange.to);
         const auto realLeft = std::min(leftRange.from, leftRange.to);
 
-        topSdrProcessor.processRegion(colors.data() + realTop, data, width, sampleHeight);
-        bottomSdrProcessor.processRegion(colors.data() + realBottom, data + 4 * width * (height - sampleHeight), width, sampleHeight);
-        leftSdrProcessor.processRegion(colors.data() + realLeft, data, sampleWidth, height, 0, width);
-        rightSdrProcessor.processRegion(colors.data() + realRight, data, sampleWidth, height, width - sampleWidth, width);
+        topSdrProcessor.processRegion(colors.data() + realTop, data, width, sampleHeight, stridePixels);
+        bottomSdrProcessor.processRegion(colors.data() + realBottom, data + 4 * stridePixels * (height - sampleHeight), width, sampleHeight, stridePixels);
+        leftSdrProcessor.processRegion(colors.data() + realLeft, data, sampleWidth, height, 0, stridePixels);
+        rightSdrProcessor.processRegion(colors.data() + realRight, data, sampleWidth, height, width - sampleWidth, stridePixels);
 
         QCoreApplication::postEvent(eventReceiver, new LedUpdateEvent{controllerLocation, colors});
     }
 
-    void processHdrImage(const uint *data, int width, int height) override
+    void processHdrImage(const uint *data, int width, int height, int stridePixels) override
     {
         const auto sampleHeight = height / resolutionHeightDivisor;
-        const auto sampleWidth = width / resolutionHeightDivisor;
+        const auto sampleWidth = width / resolutionWidthDivisor;
 
         const auto realTop = std::min(topRange.from, topRange.to);
         const auto realBottom = std::min(bottomRange.from, bottomRange.to);
         const auto realRight = std::min(rightRange.from, rightRange.to);
         const auto realLeft = std::min(leftRange.from, leftRange.to);
 
-        topHdrProcessor.processRegion(colors.data() + realTop, data, width, sampleHeight);
-        bottomHdrProcessor.processRegion(colors.data() + realBottom, data + width * (height - sampleHeight), width, sampleHeight);
-        leftHdrProcessor.processRegion(colors.data() + realLeft, data, sampleWidth, height, 0, width);
-        rightHdrProcessor.processRegion(colors.data() + realRight, data, sampleWidth, height, width - sampleWidth, width);
+        topHdrProcessor.processRegion(colors.data() + realTop, data, width, sampleHeight, stridePixels);
+        bottomHdrProcessor.processRegion(colors.data() + realBottom, data + stridePixels * (height - sampleHeight), width, sampleHeight, stridePixels);
+        leftHdrProcessor.processRegion(colors.data() + realLeft, data, sampleWidth, height, 0, stridePixels);
+        rightHdrProcessor.processRegion(colors.data() + realRight, data, sampleWidth, height, width - sampleWidth, stridePixels);
 
         QCoreApplication::postEvent(eventReceiver, new LedUpdateEvent{controllerLocation, colors});
     }

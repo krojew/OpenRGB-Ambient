@@ -20,7 +20,7 @@
 
 using namespace std::chrono_literals;
 
-const char *OpenRGBAmbientPlugin::END_SESSION_WND_CLASS = "OpenRGBAmbientPlugin";
+const TCHAR *OpenRGBAmbientPlugin::END_SESSION_WND_CLASS = TEXT("OpenRGBAmbientPlugin");
 
 LRESULT CALLBACK EndSessionWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -89,7 +89,7 @@ void OpenRGBAmbientPlugin::Load(ResourceManagerInterface *resource_manager_ptr)
     wx.lpszClassName = END_SESSION_WND_CLASS;
     RegisterClassEx(&wx);
 
-    const auto hwnd = CreateWindowEx(0, END_SESSION_WND_CLASS, "", 0, 0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr);
+    const auto hwnd = CreateWindowEx(0, END_SESSION_WND_CLASS, TEXT(""), 0, 0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr);
     SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
     resourceManager->RegisterDeviceListChangeCallback([](auto widget) {
@@ -238,29 +238,36 @@ void OpenRGBAmbientPlugin::processImage(const std::shared_ptr<ID3D11Texture2D> &
     D3D11_MAPPED_SUBRESOURCE mapped;
     context->Map(image.get(), 0, D3D11_MAP_READ, 0, &mapped);
 
-    if (!pauseCapture)
+    // When preview is enabled, process frames in real-time even if settings tab is visible (pauseCapture set).
+    if (!pauseCapture || preview)
     {
+        // If width = 1920 and bytesPerPixel = 4, a tightly packed buffer would have RowPitch = 7680 bytes.
+        // But a GPU might align rows to 8192 bytes, so RowPitch = 8192. Then stridePixels = 8192 / 4 = 2048.
+        // To index pixel (x, y), you must use data[y * stridePixels + x], not data[y * width + x].
+        const int stridePixels = static_cast<int>(mapped.RowPitch) / 4;
         if (desc.Format == DXGI_FORMAT_R10G10B10A2_UNORM)
         {
             for (const auto &processor : processors)
             {
-                processor->processHdrImage(static_cast<const std::uint32_t *>(mapped.pData), static_cast<int>(desc.Width), static_cast<int>(desc.Height));
+                processor->processHdrImage(static_cast<const std::uint32_t *>(mapped.pData), static_cast<int>(desc.Width), static_cast<int>(desc.Height), stridePixels);
             }
         }
         else
         {
             for (const auto &processor : processors)
             {
-                processor->processSdrImage(static_cast<const uchar *>(mapped.pData), static_cast<int>(desc.Width), static_cast<int>(desc.Height));
+                processor->processSdrImage(static_cast<const uchar *>(mapped.pData), static_cast<int>(desc.Width), static_cast<int>(desc.Height), stridePixels);
             }
         }
     }
 
     if (preview && desc.Format != DXGI_FORMAT_R10G10B10A2_UNORM)
     {
-        QImage previewImg{static_cast<const uchar *>(mapped.pData), static_cast<int>(desc.Width), static_cast<int>(desc.Height), QImage::Format_RGB32};
+        QImage previewImg{static_cast<const uchar *>(mapped.pData), static_cast<int>(desc.Width), static_cast<int>(desc.Height), static_cast<int>(mapped.RowPitch), QImage::Format_RGB32};
         emit previewUpdated(previewImg.copy());
     }
+
+    context->Unmap(image.get(), 0);
 }
 
 void OpenRGBAmbientPlugin::processUpdate(const LedUpdateEvent &event)

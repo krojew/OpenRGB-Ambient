@@ -57,7 +57,7 @@ signals:
     void previewUpdated(const QImage &image);
 
 private:
-    static const wchar_t *END_SESSION_WND_CLASS;
+    static const TCHAR *END_SESSION_WND_CLASS;
 
     ResourceManagerInterface *resourceManager = nullptr;
     Settings *settings = nullptr;

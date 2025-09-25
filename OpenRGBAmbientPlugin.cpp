@@ -20,7 +20,7 @@
 
 using namespace std::chrono_literals;
 
-const wchar_t *OpenRGBAmbientPlugin::END_SESSION_WND_CLASS = L"OpenRGBAmbientPlugin";
+const TCHAR *OpenRGBAmbientPlugin::END_SESSION_WND_CLASS = TEXT("OpenRGBAmbientPlugin");
 
 LRESULT CALLBACK EndSessionWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -89,7 +89,7 @@ void OpenRGBAmbientPlugin::Load(ResourceManagerInterface *resource_manager_ptr)
     wx.lpszClassName = END_SESSION_WND_CLASS;
     RegisterClassEx(&wx);
 
-    const auto hwnd = CreateWindowEx(0, END_SESSION_WND_CLASS, L"", 0, 0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr);
+    const auto hwnd = CreateWindowEx(0, END_SESSION_WND_CLASS, TEXT(""), 0, 0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr);
     SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
     resourceManager->RegisterDeviceListChangeCallback([](auto widget) {

@@ -5,6 +5,7 @@
 #ifndef OPENRGB_AMBIENT_COLORPOSTPROCESSOR_H
 #define OPENRGB_AMBIENT_COLORPOSTPROCESSOR_H
 
+#include <algorithm>
 #include <concepts>
 
 #include <QtGlobal>
@@ -36,6 +37,38 @@ struct SmoothingColorPostProcessor
                 static_cast<uchar>(red * weight + RGBGetRValue(previous) * previousWeight),
                 static_cast<uchar>(green * weight + RGBGetGValue(previous) * previousWeight),
                 static_cast<uchar>(blue * weight + RGBGetBValue(previous) * previousWeight)
+        );
+    }
+};
+
+template<ColorPostProcessor Inner>
+struct SaturatingColorPostProcessor
+{
+    float saturation;  // 1.0 = no change; >1 = more vivid; 0 = fully gray
+    Inner inner;
+
+    [[nodiscard]] inline RGBColor process(uchar red, uchar green, uchar blue, RGBColor previous) const noexcept {
+        const float r = red, g = green, b = blue;
+        const float gray = (r + g + b) / 3.0f;
+        const auto sr = static_cast<uchar>(std::clamp(gray + (r - gray) * saturation, 0.0f, 255.0f));
+        const auto sg = static_cast<uchar>(std::clamp(gray + (g - gray) * saturation, 0.0f, 255.0f));
+        const auto sb = static_cast<uchar>(std::clamp(gray + (b - gray) * saturation, 0.0f, 255.0f));
+        return inner.process(sr, sg, sb, previous);
+    }
+};
+
+template<ColorPostProcessor Inner>
+struct BrightnessColorPostProcessor
+{
+    float brightness;  // [0.0, 1.0]; 1.0 = full brightness, 0.0 = off
+    Inner inner;
+
+    [[nodiscard]] inline RGBColor process(uchar red, uchar green, uchar blue, RGBColor previous) const noexcept {
+        const RGBColor result = inner.process(red, green, blue, previous);
+        return ToRGBColor(
+                static_cast<uchar>(RGBGetRValue(result) * brightness),
+                static_cast<uchar>(RGBGetGValue(result) * brightness),
+                static_cast<uchar>(RGBGetBValue(result) * brightness)
         );
     }
 };

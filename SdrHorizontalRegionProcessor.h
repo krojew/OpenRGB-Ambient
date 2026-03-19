@@ -51,10 +51,13 @@ public:
                 }
             }
 
+            const float avgR = red   * colorFactors[0] / samplePixels;
+            const float avgG = green * colorFactors[1] / samplePixels;
+            const float avgB = blue  * colorFactors[2] / samplePixels;
             result[samples - sample - 1] = colorPostProcessor.process(
-                    static_cast<uchar>(red * colorFactors[0] / samplePixels),
-                    static_cast<uchar>(green  * colorFactors[1]/ samplePixels),
-                    static_cast<uchar>(blue * colorFactors[2] / samplePixels),
+                    static_cast<uchar>(std::clamp(avgR, 0.0f, 255.0f)),
+                    static_cast<uchar>(std::clamp(avgG, 0.0f, 255.0f)),
+                    static_cast<uchar>(std::clamp(avgB, 0.0f, 255.0f)),
                     result[samples - sample - 1]
             );
         }

@@ -20,8 +20,13 @@ QString Settings::RIGHT_SUFFIX = "_Right"; // NOLINT(cert-err58-cpp)
 QString Settings::ZONE_MAPPINGS_KEY   = "ZoneMappings"; // NOLINT(cert-err58-cpp)
 QString Settings::DISABLED_ZONES_KEY         = "DisabledZones";        // NOLINT(cert-err58-cpp)
 QString Settings::ZONE_MAPPING_LOCATIONS_KEY = "ZoneMappingLocations"; // NOLINT(cert-err58-cpp)
-QString Settings::MONITOR_ADAPTER_KEY = "MonitorAdapter"; // NOLINT(cert-err58-cpp)
-QString Settings::MONITOR_OUTPUT_KEY  = "MonitorOutput"; // NOLINT(cert-err58-cpp)
+QString Settings::MONITOR_ADAPTER_KEY    = "MonitorAdapter";    // NOLINT(cert-err58-cpp)
+QString Settings::MONITOR_OUTPUT_KEY     = "MonitorOutput";     // NOLINT(cert-err58-cpp)
+QString Settings::COLOR_CORRECTION_ENABLED_KEY = "ColorCorrectionEnabled"; // NOLINT(cert-err58-cpp)
+QString Settings::SATURATION_BOOST_KEY   = "SaturationBoost";  // NOLINT(cert-err58-cpp)
+QString Settings::WALL_COLOR_KEY         = "WallColor";         // NOLINT(cert-err58-cpp)
+QString Settings::BRIGHTNESS_ENABLED_KEY = "BrightnessEnabled"; // NOLINT(cert-err58-cpp)
+QString Settings::BRIGHTNESS_VALUE_KEY   = "BrightnessValue";   // NOLINT(cert-err58-cpp)
 
 Settings::Settings(const QString &file, QObject *parent)
     : QObject{parent}
@@ -58,6 +63,13 @@ Settings::Settings(const QString &file, QObject *parent)
 
     monitorAdapterIndex = settings.value(MONITOR_ADAPTER_KEY, 0).toInt();
     monitorOutputIndex  = settings.value(MONITOR_OUTPUT_KEY,  0).toInt();
+
+    colorCorrectionEnabledValue = settings.value(COLOR_CORRECTION_ENABLED_KEY, false).toBool();
+    saturationBoostValue = settings.value(SATURATION_BOOST_KEY, 1.0f).toFloat();
+    wallColorValue = QColor::fromRgb(settings.value(WALL_COLOR_KEY, QColor(Qt::white).rgb()).toUInt());
+
+    brightnessEnabledValue = settings.value(BRIGHTNESS_ENABLED_KEY, false).toBool();
+    brightnessValue = std::clamp(settings.value(BRIGHTNESS_VALUE_KEY, 1.0f).toFloat(), 0.0f, 1.0f);
 }
 
 bool Settings::isControllerSelected(const std::string &location) const {
@@ -323,5 +335,65 @@ void Settings::setSmoothTransitionsWeight(float value)
     smoothingWeight = value;
     settings.setValue(SMOOTHING_WEIGHT_KEY, smoothingWeight);
 
+    emit settingsChanged();
+}
+
+bool Settings::colorCorrectionEnabled() const noexcept
+{
+    return colorCorrectionEnabledValue;
+}
+
+void Settings::setColorCorrectionEnabled(bool value)
+{
+    colorCorrectionEnabledValue = value;
+    settings.setValue(COLOR_CORRECTION_ENABLED_KEY, colorCorrectionEnabledValue);
+    emit settingsChanged();
+}
+
+float Settings::saturationBoost() const noexcept
+{
+    return saturationBoostValue;
+}
+
+void Settings::setSaturationBoost(float value)
+{
+    saturationBoostValue = value;
+    settings.setValue(SATURATION_BOOST_KEY, saturationBoostValue);
+    emit settingsChanged();
+}
+
+QColor Settings::wallColor() const noexcept
+{
+    return wallColorValue;
+}
+
+void Settings::setWallColor(QColor color)
+{
+    wallColorValue = color;
+    settings.setValue(WALL_COLOR_KEY, wallColorValue.rgb());
+    emit settingsChanged();
+}
+
+bool Settings::brightnessEnabled() const noexcept
+{
+    return brightnessEnabledValue;
+}
+
+void Settings::setBrightnessEnabled(bool value)
+{
+    brightnessEnabledValue = value;
+    settings.setValue(BRIGHTNESS_ENABLED_KEY, brightnessEnabledValue);
+    emit settingsChanged();
+}
+
+float Settings::brightness() const noexcept
+{
+    return brightnessValue;
+}
+
+void Settings::setBrightness(float value)
+{
+    brightnessValue = std::clamp(value, 0.0f, 1.0f);
+    settings.setValue(BRIGHTNESS_VALUE_KEY, brightnessValue);
     emit settingsChanged();
 }

@@ -2,9 +2,11 @@
 // Created by Kamil Rojewski on 15.07.2021.
 //
 
+#include <QColorDialog>
 #include <QHBoxLayout>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QPushButton>
 #include <QSlider>
 #include <QLabel>
 
@@ -113,6 +115,101 @@ SettingsTab::SettingsTab(ResourceManagerInterface *resourceManager, Settings &se
     });
 
     mainLayout->addLayout(colorCorrectionLayout);
+
+    // Color correction row (checkbox + saturation + wall color)
+    const auto extraCorrectionLayout = new QHBoxLayout{};
+
+    const auto colorCorrectionCheck = new QCheckBox{"Color correction", this};
+    colorCorrectionCheck->setChecked(settings.colorCorrectionEnabled());
+    extraCorrectionLayout->addWidget(colorCorrectionCheck);
+
+    const auto saturationLabel = new QLabel{this};
+    auto updateSatLabel = [=, &settings]() {
+        saturationLabel->setText(QString("Sat: ×%1").arg(settings.saturationBoost(), 0, 'f', 2));
+    };
+    updateSatLabel();
+
+    const auto saturationSlider = new QSlider{Qt::Horizontal, this};
+    saturationSlider->setRange(0, 300);
+    saturationSlider->setValue(static_cast<int>(settings.saturationBoost() * 100.0f));
+    saturationSlider->setToolTip("100 = neutral. Increase to make colors more vivid.");
+    saturationSlider->setEnabled(settings.colorCorrectionEnabled());
+    connect(saturationSlider, &QSlider::valueChanged, this, [=, &settings](int v) {
+        settings.setSaturationBoost(v * 0.01f);
+        updateSatLabel();
+    });
+    extraCorrectionLayout->addWidget(saturationLabel);
+    extraCorrectionLayout->addWidget(saturationSlider);
+
+    const auto wallColorLabel = new QLabel{"Wall color:", this};
+    const auto wallColorBtn = new QPushButton{this};
+    wallColorBtn->setFixedWidth(90);
+    wallColorBtn->setEnabled(settings.colorCorrectionEnabled());
+    auto updateWallBtnColor = [=, &settings]() {
+        const QColor c = settings.wallColor();
+        wallColorBtn->setStyleSheet(
+            QString("background-color: %1; color: %2;")
+                .arg(c.name())
+                .arg(c.lightness() > 128 ? "black" : "white")
+        );
+        wallColorBtn->setText(c.name().toUpper());
+    };
+    updateWallBtnColor();
+    connect(wallColorBtn, &QPushButton::clicked, this, [=, &settings]() {
+        const QColor chosen = QColorDialog::getColor(settings.wallColor(), this, "Select wall color");
+        if (chosen.isValid())
+        {
+            settings.setWallColor(chosen);
+            updateWallBtnColor();
+        }
+    });
+    extraCorrectionLayout->addWidget(wallColorLabel);
+    extraCorrectionLayout->addWidget(wallColorBtn);
+    extraCorrectionLayout->addStretch();
+
+    connect(colorCorrectionCheck, &QCheckBox::stateChanged, this, [=, &settings](int state) {
+        const bool enabled = (state == Qt::Checked);
+        settings.setColorCorrectionEnabled(enabled);
+        saturationSlider->setEnabled(enabled);
+        wallColorLabel->setEnabled(enabled);
+        wallColorBtn->setEnabled(enabled);
+    });
+
+    mainLayout->addLayout(extraCorrectionLayout);
+
+    // Brightness row
+    const auto brightnessLayout = new QHBoxLayout{};
+
+    const auto brightnessCheck = new QCheckBox{"Brightness", this};
+    brightnessCheck->setChecked(settings.brightnessEnabled());
+    brightnessLayout->addWidget(brightnessCheck);
+
+    const auto brightnessValueLabel = new QLabel{this};
+    auto updateBrightnessLabel = [=, &settings]() {
+        brightnessValueLabel->setText(QString("%1").arg(settings.brightness(), 0, 'f', 2));
+    };
+    updateBrightnessLabel();
+
+    const auto brightnessSlider = new QSlider{Qt::Horizontal, this};
+    brightnessSlider->setRange(0, 100);
+    brightnessSlider->setValue(static_cast<int>(settings.brightness() * 100.0f));
+    brightnessSlider->setEnabled(settings.brightnessEnabled());
+    connect(brightnessSlider, &QSlider::valueChanged, this, [=, &settings](int v) {
+        settings.setBrightness(static_cast<float>(v) / 100.0f);
+        updateBrightnessLabel();
+    });
+
+    brightnessLayout->addWidget(brightnessValueLabel);
+    brightnessLayout->addWidget(brightnessSlider);
+    brightnessLayout->addStretch();
+
+    connect(brightnessCheck, &QCheckBox::stateChanged, this, [=, &settings](int state) {
+        const bool enabled = (state == Qt::Checked);
+        settings.setBrightnessEnabled(enabled);
+        brightnessSlider->setEnabled(enabled);
+    });
+
+    mainLayout->addLayout(brightnessLayout);
 
     const auto deviceList = new DeviceList{resourceManager, settings};
     connect(this, &SettingsTab::controllerListChanged, deviceList, &DeviceList::fillControllerList);

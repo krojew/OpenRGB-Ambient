@@ -11,6 +11,7 @@
 
 #include "ColorConversion.h"
 #include "LedUpdateEvent.h"
+#include "ZoneMapping.h"
 #include "ReleaseWrapper.h"
 #include "ScreenCapture.h"
 #include "SettingsTab.h"
@@ -76,7 +77,11 @@ void OpenRGBAmbientPlugin::Load(ResourceManagerInterface *resource_manager_ptr)
     resourceManager = resource_manager_ptr;
 
     settings = new Settings{QString::fromStdString((resourceManager->GetConfigurationDirectory() / "OpenRGBAmbientPlugin.ini").string()), this};
-    connect(settings, &Settings::settingsChanged, this, &OpenRGBAmbientPlugin::updateProcessors);
+    debounceTimer = new QTimer{this};
+    debounceTimer->setSingleShot(true);
+    debounceTimer->setInterval(150);
+    connect(debounceTimer, &QTimer::timeout, this, &OpenRGBAmbientPlugin::updateProcessors);
+    connect(settings, &Settings::settingsChanged, debounceTimer, qOverload<>(&QTimer::start));
 
     connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, &OpenRGBAmbientPlugin::turnOffLeds, Qt::DirectConnection);
 
@@ -104,6 +109,7 @@ QWidget *OpenRGBAmbientPlugin::GetWidget()
 {
     const auto ui = new SettingsTab{resourceManager, *settings};
     connect(this, &OpenRGBAmbientPlugin::previewUpdated, ui, &SettingsTab::updatePreview);
+    connect(this, &OpenRGBAmbientPlugin::ledColorsUpdated, ui, &SettingsTab::updateLedColors);
     connect(ui, &SettingsTab::previewChanged, this, &OpenRGBAmbientPlugin::setPreview);
     connect(ui, &SettingsTab::settingsVisibilityChanged, this, &OpenRGBAmbientPlugin::setPauseCapture);
 
@@ -168,8 +174,10 @@ void OpenRGBAmbientPlugin::updateProcessors()
 
 void OpenRGBAmbientPlugin::startCapture()
 {
+    const auto adapterIdx = static_cast<UINT>(settings->monitorAdapter());
+    const auto outputIdx  = settings->monitorOutput();
     captureThread = std::thread([=] {
-        ScreenCapture capture;
+        ScreenCapture capture{adapterIdx, outputIdx};
         Limiter limiter{60};
 
         while (!stopFlag.load())
@@ -238,13 +246,14 @@ void OpenRGBAmbientPlugin::processImage(const std::shared_ptr<ID3D11Texture2D> &
     D3D11_MAPPED_SUBRESOURCE mapped;
     context->Map(image.get(), 0, D3D11_MAP_READ, 0, &mapped);
 
+    // If width = 1920 and bytesPerPixel = 4, a tightly packed buffer would have RowPitch = 7680 bytes.
+    // But a GPU might align rows to 8192 bytes, so RowPitch = 8192. Then stridePixels = 8192 / 4 = 2048.
+    // To index pixel (x, y), you must use data[y * stridePixels + x], not data[y * width + x].
+    const int stridePixels = static_cast<int>(mapped.RowPitch) / 4;
+
     // When preview is enabled, process frames in real-time even if settings tab is visible (pauseCapture set).
     if (!pauseCapture || preview)
     {
-        // If width = 1920 and bytesPerPixel = 4, a tightly packed buffer would have RowPitch = 7680 bytes.
-        // But a GPU might align rows to 8192 bytes, so RowPitch = 8192. Then stridePixels = 8192 / 4 = 2048.
-        // To index pixel (x, y), you must use data[y * stridePixels + x], not data[y * width + x].
-        const int stridePixels = static_cast<int>(mapped.RowPitch) / 4;
         if (desc.Format == DXGI_FORMAT_R10G10B10A2_UNORM)
         {
             for (const auto &processor : processors)
@@ -261,10 +270,37 @@ void OpenRGBAmbientPlugin::processImage(const std::shared_ptr<ID3D11Texture2D> &
         }
     }
 
-    if (preview && desc.Format != DXGI_FORMAT_R10G10B10A2_UNORM)
+    if (preview)
     {
-        QImage previewImg{static_cast<const uchar *>(mapped.pData), static_cast<int>(desc.Width), static_cast<int>(desc.Height), static_cast<int>(mapped.RowPitch), QImage::Format_RGB32};
-        emit previewUpdated(previewImg.copy());
+        const int srcW = static_cast<int>(desc.Width);
+        const int srcH = static_cast<int>(desc.Height);
+        constexpr int dstW = 320;
+        const int dstH = srcW > 0 ? dstW * srcH / srcW : 180;
+
+        if (desc.Format == DXGI_FORMAT_R10G10B10A2_UNORM)
+        {
+            const auto *hdrData = static_cast<const std::uint32_t *>(mapped.pData);
+            QImage previewImg{dstW, dstH, QImage::Format_RGB32};
+            for (int y = 0; y < dstH; ++y)
+            {
+                const int srcY = y * srcH / dstH;
+                auto *line = reinterpret_cast<QRgb *>(previewImg.scanLine(y));
+                for (int x = 0; x < dstW; ++x)
+                {
+                    const int srcX = x * srcW / dstW;
+                    const std::uint32_t pixel = hdrData[srcY * stridePixels + srcX];
+                    line[x] = qRgb((pixel & 0x3ff) >> 2,
+                                   ((pixel >> 10) & 0x3ff) >> 2,
+                                   ((pixel >> 20) & 0x3ff) >> 2);
+                }
+            }
+            emit previewUpdated(previewImg);
+        }
+        else
+        {
+            QImage previewImg{static_cast<const uchar *>(mapped.pData), srcW, srcH, static_cast<int>(mapped.RowPitch), QImage::Format_RGB32};
+            emit previewUpdated(previewImg.copy());
+        }
     }
 
     context->Unmap(image.get(), 0);
@@ -283,25 +319,78 @@ void OpenRGBAmbientPlugin::processUpdate(const LedUpdateEvent &event)
     {
         const auto &colors = event.getColors();
 
-        const auto numColors = colors.size();
-        for (auto i = 0; i < numColors; ++i)
-            (*controller)->SetLED(i, colors[i]);
+        if (settings->getMappingMode(location) == MappingMode::Standard)
+        {
+            auto writeRange = [&](const LedRange &range) {
+                const int lo = std::min(range.from, range.to);
+                const int hi = std::max(range.from, range.to);
+                for (int i = lo; i < hi && i < static_cast<int>(colors.size()); ++i)
+                    (*controller)->SetLED(i, colors[i]);
+            };
+            writeRange(settings->getTopRegion(location));
+            writeRange(settings->getBottomRegion(location));
+            writeRange(settings->getLeftRegion(location));
+            writeRange(settings->getRightRegion(location));
+        }
+        else
+        {
+            for (const auto &zone : (*controller)->zones)
+            {
+                if (!settings->isZoneEnabled(location, zone.name))
+                    continue;
+
+                for (const auto &part : settings->getZoneParts(location, zone.name))
+                {
+                    if (part.region == ScreenRegion::None)
+                        continue;
+
+                    const int absFrom = static_cast<int>(zone.start_idx) + part.from;
+                    const int absTo   = static_cast<int>(zone.start_idx) + part.to;
+                    const int lo      = std::min(absFrom, absTo);
+                    const int hi      = std::max(absFrom, absTo);
+                    for (int i = lo; i < hi && i < static_cast<int>(colors.size()); ++i)
+                        (*controller)->SetLED(i, colors[i]);
+                }
+            }
+        }
 
         (*controller)->UpdateLEDs();
+
+        emit ledColorsUpdated(QString::fromStdString(location), colors);
     }
 }
 
 template<ColorPostProcessor CPP>
 std::unique_ptr<ImageProcessorBase> OpenRGBAmbientPlugin::createProcessor(RGBController *controller, std::array<float, 3> colorFactors, CPP colorPostProcessor)
 {
+    std::vector<ZoneLedRange> zoneMappings;
+    for (const auto &zone : controller->zones)
+    {
+        if (!settings->isZoneEnabled(controller->location, zone.name))
+            continue;
+
+        const auto parts = settings->getZoneParts(controller->location, zone.name);
+        for (const auto &part : parts)
+        {
+            if (part.region == ScreenRegion::None)
+                continue;
+            const auto absFrom = static_cast<int>(zone.start_idx) + part.from;
+            const auto absTo   = static_cast<int>(zone.start_idx) + part.to;
+            zoneMappings.push_back({{absFrom, absTo}, part.region, part.reversed});
+        }
+    }
+
     return std::make_unique<ImageProcessor<CPP>>(
             controller->location,
+            static_cast<int>(controller->leds.size()),
             settings->getTopRegion(controller->location),
             settings->getBottomRegion(controller->location),
             settings->getRightRegion(controller->location),
             settings->getLeftRegion(controller->location),
+            std::move(zoneMappings),
             colorFactors,
             colorPostProcessor,
+            settings->getMappingMode(controller->location) == MappingMode::Zone,
             this
     );
 }

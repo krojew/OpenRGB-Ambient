@@ -13,8 +13,11 @@
 #include <d3d11.h>
 
 #include <QObject>
+#include <QString>
+#include <QTimer>
 
 #include <OpenRGBPluginInterface.h>
+#include <RGBController.h>
 
 #include "ImageProcessor.h"
 #include "Settings.h"
@@ -55,6 +58,7 @@ public slots:
 
 signals:
     void previewUpdated(const QImage &image);
+    void ledColorsUpdated(const QString &location, const std::vector<RGBColor> &colors);
 
 private:
     static const TCHAR *END_SESSION_WND_CLASS;
@@ -65,6 +69,8 @@ private:
     std::atomic_bool stopFlag{false};
     std::atomic_bool preview{false};
     std::atomic_bool pauseCapture{false};
+
+    QTimer *debounceTimer = nullptr;
 
     std::vector<std::unique_ptr<ImageProcessorBase>> processors;
 

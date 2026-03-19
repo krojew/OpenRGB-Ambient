@@ -8,14 +8,18 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
+#include <vector>
 
 #include <QSettings>
 #include <QObject>
 
 #include "LedRange.h"
+#include "ZoneMapping.h"
 
 class ResourceManager;
 class QString;
+
+enum class MappingMode { Standard, Zone };
 
 class Settings final
         : public QObject
@@ -29,6 +33,12 @@ public:
     void selectController(const std::string &location);
     void unselectController(const std::string &location);
 
+    [[nodiscard]] bool isZoneEnabled(const std::string &location, const std::string &zoneName) const;
+    void setZoneEnabled(const std::string &location, const std::string &zoneName, bool enabled);
+
+    [[nodiscard]] MappingMode getMappingMode(const std::string &location) const;
+    void setMappingMode(const std::string &location, MappingMode mode);
+
     [[nodiscard]] LedRange getTopRegion(const std::string &location) const;
     [[nodiscard]] LedRange getBottomRegion(const std::string &location) const;
     [[nodiscard]] LedRange getRightRegion(const std::string &location) const;
@@ -38,6 +48,14 @@ public:
     void setBottomRegion(const std::string &location, LedRange range);
     void setRightRegion(const std::string &location, LedRange range);
     void setLeftRegion(const std::string &location, LedRange range);
+
+    [[nodiscard]] std::vector<ZonePart> getZoneParts(const std::string &location, const std::string &zoneName) const;
+    void setZoneParts(const std::string &location, const std::string &zoneName, std::vector<ZonePart> parts);
+
+    [[nodiscard]] int monitorAdapter() const noexcept;
+    [[nodiscard]] int monitorOutput() const noexcept;
+    void setMonitorAdapter(int index);
+    void setMonitorOutput(int index);
 
     [[nodiscard]] bool compensateCoolWhite() const noexcept;
     void setCoolWhiteCompensation(bool value);
@@ -67,16 +85,30 @@ private:
     static QString LEFT_SUFFIX;
     static QString RIGHT_SUFFIX;
 
-    using RegionMap = std::unordered_map<std::string, LedRange>;
+    static QString ZONE_MAPPINGS_KEY;
+    static QString DISABLED_ZONES_KEY;
+    static QString ZONE_MAPPING_LOCATIONS_KEY;
+    static QString MONITOR_ADAPTER_KEY;
+    static QString MONITOR_OUTPUT_KEY;
+
+    using RegionMap     = std::unordered_map<std::string, LedRange>;
+    using ZonePartsMap  = std::unordered_map<std::string, std::vector<ZonePart>>; // key: "location|zoneName"
 
     QSettings settings;
 
     std::unordered_set<std::string> selectedControllers;
+    std::unordered_set<std::string> disabledZones;         // key: "location|zoneName"
+    std::unordered_set<std::string> zoneMappingLocations;  // locations using zone mapping mode
 
     RegionMap topRegions;
     RegionMap bottomRegions;
     RegionMap rightRegions;
     RegionMap leftRegions;
+
+    ZonePartsMap zoneParts;
+
+    int monitorAdapterIndex = 0;
+    int monitorOutputIndex  = 0;
 
     bool coolWhiteCompensation = true;
 
@@ -86,10 +118,14 @@ private:
     float smoothingWeight = 0.5;
 
     void syncSelectedControllers();
+    void syncDisabledZones();
+    void syncMappingModes();
     void syncRegions(const RegionMap &map, const QString &key);
+    void syncZoneMappings();
 
     static void fillRegions(RegionMap &map, const QVariantHash &data);
     [[nodiscard]] static LedRange findRange(const RegionMap &map, const std::string &location);
+    static void fillZoneParts(ZonePartsMap &map, const QVariantHash &data);
 };
 
 #endif //OPENRGB_AMBIENT_SETTINGS_H

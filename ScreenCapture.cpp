@@ -8,7 +8,45 @@
 
 #include "ScreenCapture.h"
 
-ScreenCapture::ScreenCapture()
+std::vector<ScreenCapture::MonitorInfo> ScreenCapture::enumerateMonitors()
+{
+    std::vector<MonitorInfo> result;
+
+    IDXGIFactory1 *pFactory = nullptr;
+    if (FAILED(CreateDXGIFactory1(__uuidof(IDXGIFactory1), reinterpret_cast<void **>(&pFactory))))
+        return result;
+    const auto factory = releasing(pFactory);
+
+    IDXGIAdapter1 *pAdapter = nullptr;
+    for (UINT adapterIdx = 0; factory->EnumAdapters1(adapterIdx, &pAdapter) == S_OK; ++adapterIdx)
+    {
+        const auto adapter = releasing(pAdapter);
+
+        IDXGIOutput *pOutput = nullptr;
+        for (int outputIdx = 0; adapter->EnumOutputs(static_cast<UINT>(outputIdx), &pOutput) == S_OK; ++outputIdx)
+        {
+            const auto output = releasing(pOutput);
+
+            DXGI_OUTPUT_DESC desc;
+            output->GetDesc(&desc);
+
+            const int width  = desc.DesktopCoordinates.right  - desc.DesktopCoordinates.left;
+            const int height = desc.DesktopCoordinates.bottom - desc.DesktopCoordinates.top;
+
+            // DeviceName is always ASCII (e.g. "\\.\DISPLAY1")
+            const std::wstring wname{desc.DeviceName};
+            const std::string  name{wname.begin(), wname.end()};
+
+            result.push_back({name + " (" + std::to_string(width) + "x" + std::to_string(height) + ")",
+                              adapterIdx, outputIdx});
+        }
+    }
+    return result;
+}
+
+ScreenCapture::ScreenCapture(UINT adapterIndex, int outputIndex)
+    : adapterIndex{adapterIndex}
+    , outputIndex{outputIndex}
 {
     initAdapter();
     initOutput();
@@ -16,7 +54,7 @@ ScreenCapture::ScreenCapture()
     initDuplicator();
 }
 
-void ScreenCapture::initAdapter(UINT index)
+void ScreenCapture::initAdapter()
 {
     IDXGIFactory1 *pFactory = nullptr;
 
@@ -32,7 +70,7 @@ void ScreenCapture::initAdapter(UINT index)
         if (FAILED(pAdapter->GetDesc(&desc)))
             throw std::runtime_error{"Failed to retrieve description of adapter."};
 
-        if (i == index)
+        if (i == adapterIndex)
         {
             adapter = releasing(pAdapter);
             factory = releasing(pFactory);
@@ -46,11 +84,12 @@ void ScreenCapture::initAdapter(UINT index)
     }
 }
 
-void ScreenCapture::initOutput(size_t index)
+void ScreenCapture::initOutput()
 {
     auto outputs = enumerateVideoOutputs();
-    if (index < outputs.size())
-        adapterOutput = std::move(outputs[index]);
+    const auto idx = static_cast<size_t>(outputIndex);
+    if (idx < outputs.size())
+        adapterOutput = std::move(outputs[idx]);
 }
 
 std::vector<std::shared_ptr<IDXGIOutput>> ScreenCapture::enumerateVideoOutputs()

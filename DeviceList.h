@@ -26,7 +26,9 @@ signals:
 
 public slots:
     void fillControllerList() const;
-    void saveCheckState(QListWidgetItem *item) const;
+
+private slots:
+    void onItemChanged(QListWidgetItem *item) const;
 
 private:
     ResourceManagerInterface *resourceManager;

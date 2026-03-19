@@ -9,8 +9,8 @@
 
 struct LedRange
 {
-    int from;
-    int to;
+    int from = 0;
+    int to   = 0;
 
     inline int getLength() const noexcept
     {

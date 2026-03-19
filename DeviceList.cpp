@@ -7,12 +7,13 @@
 #include <QListWidget>
 
 #include <ResourceManager.h>
+#include <RGBController.h>
 
 #include "Settings.h"
 
 #include "DeviceList.h"
 
-#include <RGBController.h>
+static constexpr int LOC_ROLE = Qt::UserRole;
 
 DeviceList::DeviceList(ResourceManagerInterface *resourceManager, Settings &settings, QWidget *parent)
     : QWidget{parent}
@@ -22,10 +23,10 @@ DeviceList::DeviceList(ResourceManagerInterface *resourceManager, Settings &sett
     const auto layout = new QHBoxLayout{this};
 
     deviceList = new QListWidget{};
-    connect(deviceList, &QListWidget::itemChanged, this, &DeviceList::saveCheckState);
-    connect(deviceList, &QListWidget::currentItemChanged, this, [this](auto current, auto previous) {
+    connect(deviceList, &QListWidget::itemChanged, this, &DeviceList::onItemChanged);
+    connect(deviceList, &QListWidget::currentItemChanged, this, [this](QListWidgetItem *current, QListWidgetItem *) {
         if (current != nullptr)
-            emit controllerSelected(current->data(Qt::UserRole).toString());
+            emit controllerSelected(current->data(LOC_ROLE).toString());
     });
 
     layout->addWidget(deviceList);
@@ -33,29 +34,32 @@ DeviceList::DeviceList(ResourceManagerInterface *resourceManager, Settings &sett
 
 void DeviceList::fillControllerList() const
 {
-    deviceList->clear();
-
-    const auto &controllers = resourceManager->GetRGBControllers();
-    for (const auto controller : controllers)
     {
-        if (std::ranges::none_of(controller->modes, [](const auto &mode) {
-            return mode.name == "Direct";
-        }))
+        const QSignalBlocker blocker{deviceList};
+        deviceList->clear();
+
+        const auto &controllers = resourceManager->GetRGBControllers();
+        for (const auto controller : controllers)
         {
-            continue;
+            if (std::ranges::none_of(controller->modes, [](const auto &mode) {
+                return mode.name == "Direct";
+            }))
+                continue;
+
+            const auto item = new QListWidgetItem{QString::fromStdString(controller->name)};
+            item->setData(LOC_ROLE, QString::fromStdString(controller->location));
+            item->setCheckState(settings.isControllerSelected(controller->location) ? Qt::Checked : Qt::Unchecked);
+            deviceList->addItem(item);
         }
-
-        const auto item = new QListWidgetItem{QString::fromStdString(controller->name)};
-        item->setCheckState(settings.isControllerSelected(controller->location) ? Qt::Checked : Qt::Unchecked);
-        item->setData(Qt::UserRole, QString::fromStdString(controller->location));
-
-        deviceList->addItem(item);
     }
+
+    if (deviceList->count() > 0)
+        deviceList->setCurrentRow(0);
 }
 
-void DeviceList::saveCheckState(QListWidgetItem *item) const
+void DeviceList::onItemChanged(QListWidgetItem *item) const
 {
-    const auto location = item->data(Qt::UserRole).toString().toStdString();
+    const auto location = item->data(LOC_ROLE).toString().toStdString();
     if (item->checkState() == Qt::Checked)
         settings.selectController(location);
     else

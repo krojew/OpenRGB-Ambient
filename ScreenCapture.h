@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <memory>
+#include <string>
 
 #include <windows.h>
 #include <dxgi1_5.h>
@@ -16,13 +17,25 @@
 class ScreenCapture final
 {
 public:
-    ScreenCapture();
+    struct MonitorInfo
+    {
+        std::string displayName; // e.g. "\\.\DISPLAY1 (1920x1080)"
+        UINT        adapterIndex;
+        int         outputIndex;
+    };
+
+    static std::vector<MonitorInfo> enumerateMonitors();
+
+    explicit ScreenCapture(UINT adapterIndex = 0, int outputIndex = 0);
 
     bool grabContent();
 
     [[nodiscard]] std::shared_ptr<ID3D11Texture2D> getScreen() const;
 
 private:
+    UINT adapterIndex;
+    int  outputIndex;
+
     std::shared_ptr<IDXGIFactory1> factory;
     std::shared_ptr<IDXGIAdapter1> adapter;
     std::shared_ptr<IDXGIOutput> adapterOutput;
@@ -32,8 +45,8 @@ private:
     std::shared_ptr<IDXGIOutput5> duplicatorOutput;
     std::shared_ptr<ID3D11Texture2D> image;
 
-    void initAdapter(UINT index = 0);
-    void initOutput(size_t index = 0);
+    void initAdapter();
+    void initOutput();
     void initDevice();
     bool initDuplicator();
 

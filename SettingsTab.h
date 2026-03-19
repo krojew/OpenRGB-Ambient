@@ -5,11 +5,15 @@
 #ifndef OPENRGB_AMBIENT_SETTINGSTAB_H
 #define OPENRGB_AMBIENT_SETTINGSTAB_H
 
+#include <vector>
+
 #include <QWidget>
+
+#include <RGBController.h>
 
 class ResourceManagerInterface;
 class Settings;
-class QLabel;
+class LedPreviewWidget;
 class QImage;
 
 class SettingsTab
@@ -23,6 +27,7 @@ public:
 
 public slots:
     void updatePreview(const QImage &image) const;
+    void updateLedColors(const QString &location, const std::vector<RGBColor> &colors) const;
 
 signals:
     void controllerListChanged();
@@ -34,7 +39,7 @@ protected:
     void hideEvent(QHideEvent *event) override;
 
 private:
-    QLabel *preview = nullptr;
+    LedPreviewWidget *preview = nullptr;
 };
 
 #endif //OPENRGB_AMBIENT_SETTINGSTAB_H

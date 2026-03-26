@@ -56,7 +56,7 @@ OpenRGBPluginInfo OpenRGBAmbientPlugin::GetPluginInfo()
     return {
             "OpenRGBAmbientPlugin",
             "Desktop ambient light support",
-            "3.0.3",
+            "3.1.0",
             "",
             "https://github.com/krojew/OpenRGB-Ambient",
             {},

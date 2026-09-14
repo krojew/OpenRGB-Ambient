@@ -1,0 +1,13 @@
+//
+// Generated from PluginMetadata.h.in - edit the values in CMakeLists.txt.
+//
+
+#ifndef OPENRGB_AMBIENT_PLUGINMETADATA_H
+#define OPENRGB_AMBIENT_PLUGINMETADATA_H
+
+const auto pluginName        = "@PLUGIN_NAME@";
+const auto pluginDescription = "@PLUGIN_DESCRIPTION@";
+const auto pluginVersion     = "@PLUGIN_VERSION@";
+const auto pluginUrl         = "@PLUGIN_URL@";
+
+#endif //OPENRGB_AMBIENT_PLUGINMETADATA_H

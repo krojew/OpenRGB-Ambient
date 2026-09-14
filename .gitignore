@@ -17,3 +17,6 @@
 /.ninja_log
 /Release/
 /Debug/
+/OpenRGBAmbientPlugin.json
+/PluginMetadata.h
+/.qt/

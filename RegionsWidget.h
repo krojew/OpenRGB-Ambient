@@ -1,7 +1,3 @@
-//
-// Created by Kamil Rojewski on 15.07.2021.
-//
-
 #ifndef OPENRGB_AMBIENT_REGIONSWIDGET_H
 #define OPENRGB_AMBIENT_REGIONSWIDGET_H
 
@@ -9,9 +5,9 @@
 
 #include <QWidget>
 
+class OpenRGBPluginAPIInterface;
 class QFormLayout;
 class QRadioButton;
-class ResourceManagerInterface;
 class RegionWidget;
 class Settings;
 
@@ -21,7 +17,7 @@ class RegionsWidget
     Q_OBJECT
 
 public:
-    RegionsWidget(ResourceManagerInterface *resourceManager, Settings &settings, QWidget *parent = nullptr);
+    RegionsWidget(OpenRGBPluginAPIInterface *pluginInterface, Settings &settings, QWidget *parent = nullptr);
     ~RegionsWidget() override = default;
 
 public slots:
@@ -29,7 +25,7 @@ public slots:
     void setPreview(bool enabled);
 
 private:
-    ResourceManagerInterface *resourceManager = nullptr;
+    OpenRGBPluginAPIInterface *pluginInterface = nullptr;
     Settings &settings;
 
     RegionWidget *top = nullptr;

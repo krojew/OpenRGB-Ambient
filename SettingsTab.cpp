@@ -1,7 +1,3 @@
-//
-// Created by Kamil Rojewski on 15.07.2021.
-//
-
 #include <QColorDialog>
 #include <QHBoxLayout>
 #include <QCheckBox>
@@ -19,7 +15,7 @@
 
 #include "SettingsTab.h"
 
-SettingsTab::SettingsTab(ResourceManagerInterface *resourceManager, Settings &settings, QWidget *parent)
+SettingsTab::SettingsTab(OpenRGBPluginAPIInterface *pluginInterface, Settings &settings, QWidget *parent)
     : QWidget{parent}
 {
     const auto mainLayout = new QVBoxLayout{this};
@@ -60,13 +56,13 @@ SettingsTab::SettingsTab(ResourceManagerInterface *resourceManager, Settings &se
 
     previewLayout->addWidget(previewBtn);
 
-    preview = new LedPreviewWidget{resourceManager, settings};
+    preview = new LedPreviewWidget{pluginInterface, settings};
 
     previewLayout->addWidget(preview);
 
     topLayout->addLayout(previewLayout);
 
-    const auto regionsWidget = new RegionsWidget{resourceManager, settings};
+    const auto regionsWidget = new RegionsWidget{pluginInterface, settings};
     connect(this, &SettingsTab::previewChanged, regionsWidget, &RegionsWidget::setPreview);
     topLayout->addWidget(regionsWidget);
 
@@ -211,7 +207,7 @@ SettingsTab::SettingsTab(ResourceManagerInterface *resourceManager, Settings &se
 
     mainLayout->addLayout(brightnessLayout);
 
-    const auto deviceList = new DeviceList{resourceManager, settings};
+    const auto deviceList = new DeviceList{pluginInterface, settings};
     connect(this, &SettingsTab::controllerListChanged, deviceList, &DeviceList::fillControllerList);
     connect(deviceList, &DeviceList::controllerSelected, regionsWidget, &RegionsWidget::selectController);
 

@@ -1,7 +1,3 @@
-//
-// Created by Kamil Rojewski on 15.07.2021.
-//
-
 #ifndef OPENRGB_AMBIENT_SETTINGSTAB_H
 #define OPENRGB_AMBIENT_SETTINGSTAB_H
 
@@ -11,7 +7,7 @@
 
 #include <RGBController.h>
 
-class ResourceManagerInterface;
+class OpenRGBPluginAPIInterface;
 class Settings;
 class LedPreviewWidget;
 class QImage;
@@ -22,7 +18,7 @@ class SettingsTab
     Q_OBJECT
 
 public:
-    SettingsTab(ResourceManagerInterface *resourceManager, Settings &settings, QWidget *parent = nullptr);
+    SettingsTab(OpenRGBPluginAPIInterface *pluginInterface, Settings &settings, QWidget *parent = nullptr);
     ~SettingsTab() override = default;
 
 public slots:

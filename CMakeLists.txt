@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(openrgb_ambient)
+project(openrgb_ambient VERSION 4.0.0)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 20)
@@ -15,6 +15,27 @@ set(REQUIRED_LIBS Core Gui Widgets)
 set(REQUIRED_LIBS_QUALIFIED Qt${QT_VERSION}::Core Qt${QT_VERSION}::Gui Qt${QT_VERSION}::Widgets)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
+
+# Plugin metadata, shared between the Qt plugin metadata JSON - which OpenRGB reads before loading the
+# library - and GetPluginInfo().
+set(PLUGIN_ID "com.github.krojew.OpenRGBAmbient")
+set(PLUGIN_NAME "OpenRGBAmbientPlugin")
+set(PLUGIN_DESCRIPTION "Desktop ambient light support")
+set(PLUGIN_URL "https://github.com/krojew/OpenRGB-Ambient")
+set(PLUGIN_VERSION ${PROJECT_VERSION})
+
+# OpenRGB skips any plugin whose JSON API version differs from the headers it was built against, so take
+# the value straight from those headers instead of duplicating it.
+file(STRINGS OpenRGB/OpenRGBPluginInterface.h PLUGIN_API_VERSION_DEFINE
+        REGEX "^#define[ \t]+OPENRGB_PLUGIN_API_VERSION[ \t]+[0-9]+")
+if (NOT PLUGIN_API_VERSION_DEFINE)
+    message(FATAL_ERROR "Could not read OPENRGB_PLUGIN_API_VERSION from OpenRGB/OpenRGBPluginInterface.h")
+endif ()
+string(REGEX REPLACE "^#define[ \t]+OPENRGB_PLUGIN_API_VERSION[ \t]+([0-9]+).*$" "\\1"
+        PLUGIN_API_VERSION "${PLUGIN_API_VERSION_DEFINE}")
+
+configure_file(OpenRGBAmbientPlugin.json.in OpenRGBAmbientPlugin.json @ONLY)
+configure_file(PluginMetadata.h.in PluginMetadata.h @ONLY)
 
 add_library(${PROJECT_NAME} SHARED OpenRGBAmbientPlugin.h OpenRGBAmbientPlugin.cpp DeviceList.cpp DeviceList.h Settings.cpp Settings.h ScreenCapture.cpp ScreenCapture.h Limiter.cpp Limiter.h ReleaseWrapper.h SettingsTab.cpp SettingsTab.h RegionsWidget.cpp RegionsWidget.h RegionWidget.cpp RegionWidget.h LedUpdateEvent.h LedUpdateEvent.cpp ImageProcessor.h LedRange.h ZoneMapping.h SdrHorizontalRegionProcessor.h SdrVerticalRegionProcessor.h ColorConversion.h HdrVerticalRegionProcessor.h HdrHorizontalRegionProcessor.h ColorPostProcessor.h LedPreviewWidget.h LedPreviewWidget.cpp)
 

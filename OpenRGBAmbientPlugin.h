@@ -60,6 +60,8 @@ public:
 
     void turnOffLeds();
 
+    void resumeCapture();
+
 public slots:
     void setPreview(bool enabled);
     void setPauseCapture(bool enabled);
@@ -75,9 +77,15 @@ private:
     OpenRGBPluginAPIInterface *pluginApiPtr = nullptr;
     Settings *settings = nullptr;
 
+    HWND endSessionWindow = nullptr;
+
     std::atomic_bool stopFlag{false};
     std::atomic_bool preview{false};
     std::atomic_bool pauseCapture{false};
+
+    // Latched once the LEDs have been blacked out for shutdown. Suppresses any further LED writes so
+    // that updates already queued on the event loop cannot light the LEDs back up.
+    std::atomic_bool ledsOff{false};
 
     QTimer *debounceTimer = nullptr;
 
@@ -87,6 +95,8 @@ private:
 
     void startCapture();
     void stopCapture();
+
+    void destroyEndSessionWindow();
 
     void processImage(const std::shared_ptr<ID3D11Texture2D> &image);
     void processUpdate(const LedUpdateEvent &event);

@@ -23,11 +23,19 @@ namespace
 {
     LRESULT CALLBACK EndSessionWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
-        if (uMsg == WM_QUERYENDSESSION)
+        if (uMsg == WM_QUERYENDSESSION || uMsg == WM_ENDSESSION)
         {
             const auto plugin = reinterpret_cast<OpenRGBAmbientPlugin *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
             if (plugin != nullptr)
-                plugin->turnOffLeds();
+            {
+                // A critical shutdown skips the query phase entirely and only sends WM_ENDSESSION, so
+                // both messages have to turn the LEDs off. WM_ENDSESSION with wParam FALSE means the
+                // session end was cancelled and the machine keeps running.
+                if (uMsg == WM_ENDSESSION && wParam == FALSE)
+                    plugin->resumeCapture();
+                else
+                    plugin->turnOffLeds();
+            }
         }
 
         return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -36,6 +44,7 @@ namespace
 
 OpenRGBAmbientPlugin::~OpenRGBAmbientPlugin()
 {
+    destroyEndSessionWindow();
     stopCapture();
 }
 
@@ -93,8 +102,9 @@ void OpenRGBAmbientPlugin::Load(OpenRGBPluginAPIInterface* plugin_api_ptr)
     wx.lpszClassName = END_SESSION_WND_CLASS;
     RegisterClassEx(&wx);
 
-    const auto hwnd = CreateWindowEx(0, END_SESSION_WND_CLASS, TEXT(""), 0, 0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr);
-    SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+    endSessionWindow = CreateWindowEx(0, END_SESSION_WND_CLASS, TEXT(""), 0, 0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr);
+    if (endSessionWindow != nullptr)
+        SetWindowLongPtr(endSessionWindow, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
     updateProcessors();
 }
@@ -125,6 +135,7 @@ QMenu *OpenRGBAmbientPlugin::GetTrayMenu()
 void OpenRGBAmbientPlugin::Unload()
 {
     turnOffLeds();
+    destroyEndSessionWindow();
 }
 
 void OpenRGBAmbientPlugin::ResourceManagerUpdated(unsigned update_reason)
@@ -174,6 +185,11 @@ void OpenRGBAmbientPlugin::setPauseCapture(bool enabled)
 
 void OpenRGBAmbientPlugin::updateProcessors()
 {
+    // A device list update can arrive while the session is ending; rebuilding here would restart
+    // capture after the LEDs have already been blacked out.
+    if (ledsOff.load(std::memory_order::relaxed))
+        return;
+
     stopCapture();
 
     processors.clear();
@@ -265,11 +281,37 @@ void OpenRGBAmbientPlugin::stopCapture()
     }
 }
 
+void OpenRGBAmbientPlugin::resumeCapture()
+{
+    if (!ledsOff.exchange(false))
+        return;
+
+    updateProcessors();
+}
+
+void OpenRGBAmbientPlugin::destroyEndSessionWindow()
+{
+    if (endSessionWindow != nullptr)
+    {
+        SetWindowLongPtr(endSessionWindow, GWLP_USERDATA, 0);
+        DestroyWindow(endSessionWindow);
+        endSessionWindow = nullptr;
+    }
+
+    // The window procedure lives in this module, so the class must not outlive it.
+    UnregisterClass(END_SESSION_WND_CLASS, GetModuleHandle(nullptr));
+}
+
 void OpenRGBAmbientPlugin::turnOffLeds()
 {
-    // since this method can be called from various places and resourceManager might be gone, there's a need to guard
-    // from nullptr access
-    if (stopFlag.load(std::memory_order::relaxed))
+    // This can be reached after the plugin API is gone, so guard against nullptr access.
+    if (pluginApiPtr == nullptr || settings == nullptr)
+        return;
+
+    // Latch before writing black. Capture posts LED updates to the event loop, and the ones already
+    // queued when the capture thread stops would otherwise be delivered afterwards and light the LEDs
+    // back up. The latch also makes repeated shutdown notifications cheap.
+    if (ledsOff.exchange(true))
         return;
 
     stopCapture();
@@ -284,8 +326,10 @@ void OpenRGBAmbientPlugin::turnOffLeds()
         }
     }
 
-    // give some time for async update
-    std::this_thread::sleep_for(300ms);
+    // UpdateLEDs only raises a flag that the controller's own update thread polls on a 1 ms sleep,
+    // which Windows' default timer granularity rounds up to roughly 16 ms. Allow a margin for the
+    // write to be picked up before the process goes away.
+    std::this_thread::sleep_for(100ms);
 }
 
 void OpenRGBAmbientPlugin::processImage(const std::shared_ptr<ID3D11Texture2D> &image)
@@ -368,6 +412,9 @@ void OpenRGBAmbientPlugin::processImage(const std::shared_ptr<ID3D11Texture2D> &
 
 void OpenRGBAmbientPlugin::processUpdate(const LedUpdateEvent &event)
 {
+    if (ledsOff.load(std::memory_order::relaxed))
+        return;
+
     const auto &location = event.getControllerLocation();
 
     const auto &controllers = pluginApiPtr->GetRGBControllers();

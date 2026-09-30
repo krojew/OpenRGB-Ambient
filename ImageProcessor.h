@@ -71,20 +71,20 @@ public:
             switch (z.region)
             {
                 case ScreenRegion::Top:
-                    topZoneEntries.push_back({z.range, z.reversed});
-                    topSdrZoneProcs.emplace_back(len, colorFactors, colorPostProcessor);
+                    topZoneRanges.push_back(z.range);
+                    topSdrZoneProcs.emplace_back(len, colorFactors, colorPostProcessor, z.reversed);
                     break;
                 case ScreenRegion::Bottom:
-                    bottomZoneEntries.push_back({z.range, z.reversed});
-                    bottomSdrZoneProcs.emplace_back(len, colorFactors, colorPostProcessor);
+                    bottomZoneRanges.push_back(z.range);
+                    bottomSdrZoneProcs.emplace_back(len, colorFactors, colorPostProcessor, z.reversed);
                     break;
                 case ScreenRegion::Left:
-                    leftZoneEntries.push_back({z.range, z.reversed});
-                    leftSdrZoneProcs.emplace_back(len, colorFactors, colorPostProcessor);
+                    leftZoneRanges.push_back(z.range);
+                    leftSdrZoneProcs.emplace_back(len, colorFactors, colorPostProcessor, z.reversed);
                     break;
                 case ScreenRegion::Right:
-                    rightZoneEntries.push_back({z.range, z.reversed});
-                    rightSdrZoneProcs.emplace_back(len, colorFactors, colorPostProcessor);
+                    rightZoneRanges.push_back(z.range);
+                    rightSdrZoneProcs.emplace_back(len, colorFactors, colorPostProcessor, z.reversed);
                     break;
                 default:
                     break;
@@ -111,37 +111,25 @@ public:
         }
         else
         {
-            for (auto i = 0u; i < topZoneEntries.size(); ++i)
+            for (auto i = 0u; i < topZoneRanges.size(); ++i)
             {
-                const auto start = std::min(topZoneEntries[i].range.from, topZoneEntries[i].range.to);
-                const auto len = topZoneEntries[i].range.getLength();
+                const auto start = std::min(topZoneRanges[i].from, topZoneRanges[i].to);
                 topSdrZoneProcs[i].processRegion(colors.data() + start, data, width, sampleHeight, stridePixels);
-                if (topZoneEntries[i].reversed)
-                    std::reverse(colors.data() + start, colors.data() + start + len);
             }
-            for (auto i = 0u; i < bottomZoneEntries.size(); ++i)
+            for (auto i = 0u; i < bottomZoneRanges.size(); ++i)
             {
-                const auto start = std::min(bottomZoneEntries[i].range.from, bottomZoneEntries[i].range.to);
-                const auto len = bottomZoneEntries[i].range.getLength();
+                const auto start = std::min(bottomZoneRanges[i].from, bottomZoneRanges[i].to);
                 bottomSdrZoneProcs[i].processRegion(colors.data() + start, data + 4 * stridePixels * (height - sampleHeight), width, sampleHeight, stridePixels);
-                if (bottomZoneEntries[i].reversed)
-                    std::reverse(colors.data() + start, colors.data() + start + len);
             }
-            for (auto i = 0u; i < leftZoneEntries.size(); ++i)
+            for (auto i = 0u; i < leftZoneRanges.size(); ++i)
             {
-                const auto start = std::min(leftZoneEntries[i].range.from, leftZoneEntries[i].range.to);
-                const auto len = leftZoneEntries[i].range.getLength();
+                const auto start = std::min(leftZoneRanges[i].from, leftZoneRanges[i].to);
                 leftSdrZoneProcs[i].processRegion(colors.data() + start, data, sampleWidth, height, 0, stridePixels);
-                if (leftZoneEntries[i].reversed)
-                    std::reverse(colors.data() + start, colors.data() + start + len);
             }
-            for (auto i = 0u; i < rightZoneEntries.size(); ++i)
+            for (auto i = 0u; i < rightZoneRanges.size(); ++i)
             {
-                const auto start = std::min(rightZoneEntries[i].range.from, rightZoneEntries[i].range.to);
-                const auto len = rightZoneEntries[i].range.getLength();
+                const auto start = std::min(rightZoneRanges[i].from, rightZoneRanges[i].to);
                 rightSdrZoneProcs[i].processRegion(colors.data() + start, data, sampleWidth, height, width - sampleWidth, stridePixels);
-                if (rightZoneEntries[i].reversed)
-                    std::reverse(colors.data() + start, colors.data() + start + len);
             }
         }
 
@@ -167,7 +155,7 @@ public:
         }
         else
         {
-            if (!topZoneEntries.empty())
+            if (!topZoneRanges.empty())
             {
                 hdrTopCache.resize(static_cast<size_t>(4 * width * sampleHeight));
                 for (int y = 0; y < sampleHeight; ++y)
@@ -180,16 +168,13 @@ public:
                         hdrTopCache[idx + 2] = static_cast<uchar>((p & 0x3ffu) >> 2);
                         hdrTopCache[idx + 3] = 0;
                     }
-                for (auto i = 0u; i < topZoneEntries.size(); ++i)
+                for (auto i = 0u; i < topZoneRanges.size(); ++i)
                 {
-                    const auto start = std::min(topZoneEntries[i].range.from, topZoneEntries[i].range.to);
-                    const auto len = topZoneEntries[i].range.getLength();
+                    const auto start = std::min(topZoneRanges[i].from, topZoneRanges[i].to);
                     topSdrZoneProcs[i].processRegion(colors.data() + start, hdrTopCache.data(), width, sampleHeight, width);
-                    if (topZoneEntries[i].reversed)
-                        std::reverse(colors.data() + start, colors.data() + start + len);
                 }
             }
-            if (!bottomZoneEntries.empty())
+            if (!bottomZoneRanges.empty())
             {
                 hdrBottomCache.resize(static_cast<size_t>(4 * width * sampleHeight));
                 const auto bottomStartRow = height - sampleHeight;
@@ -203,16 +188,13 @@ public:
                         hdrBottomCache[idx + 2] = static_cast<uchar>((p & 0x3ffu) >> 2);
                         hdrBottomCache[idx + 3] = 0;
                     }
-                for (auto i = 0u; i < bottomZoneEntries.size(); ++i)
+                for (auto i = 0u; i < bottomZoneRanges.size(); ++i)
                 {
-                    const auto start = std::min(bottomZoneEntries[i].range.from, bottomZoneEntries[i].range.to);
-                    const auto len = bottomZoneEntries[i].range.getLength();
+                    const auto start = std::min(bottomZoneRanges[i].from, bottomZoneRanges[i].to);
                     bottomSdrZoneProcs[i].processRegion(colors.data() + start, hdrBottomCache.data(), width, sampleHeight, width);
-                    if (bottomZoneEntries[i].reversed)
-                        std::reverse(colors.data() + start, colors.data() + start + len);
                 }
             }
-            if (!leftZoneEntries.empty())
+            if (!leftZoneRanges.empty())
             {
                 hdrLeftCache.resize(static_cast<size_t>(4 * sampleWidth * height));
                 for (int y = 0; y < height; ++y)
@@ -225,16 +207,13 @@ public:
                         hdrLeftCache[idx + 2] = static_cast<uchar>((p & 0x3ffu) >> 2);
                         hdrLeftCache[idx + 3] = 0;
                     }
-                for (auto i = 0u; i < leftZoneEntries.size(); ++i)
+                for (auto i = 0u; i < leftZoneRanges.size(); ++i)
                 {
-                    const auto start = std::min(leftZoneEntries[i].range.from, leftZoneEntries[i].range.to);
-                    const auto len = leftZoneEntries[i].range.getLength();
+                    const auto start = std::min(leftZoneRanges[i].from, leftZoneRanges[i].to);
                     leftSdrZoneProcs[i].processRegion(colors.data() + start, hdrLeftCache.data(), sampleWidth, height, 0, sampleWidth);
-                    if (leftZoneEntries[i].reversed)
-                        std::reverse(colors.data() + start, colors.data() + start + len);
                 }
             }
-            if (!rightZoneEntries.empty())
+            if (!rightZoneRanges.empty())
             {
                 hdrRightCache.resize(static_cast<size_t>(4 * sampleWidth * height));
                 const auto rightStartX = width - sampleWidth;
@@ -248,13 +227,10 @@ public:
                         hdrRightCache[idx + 2] = static_cast<uchar>((p & 0x3ffu) >> 2);
                         hdrRightCache[idx + 3] = 0;
                     }
-                for (auto i = 0u; i < rightZoneEntries.size(); ++i)
+                for (auto i = 0u; i < rightZoneRanges.size(); ++i)
                 {
-                    const auto start = std::min(rightZoneEntries[i].range.from, rightZoneEntries[i].range.to);
-                    const auto len = rightZoneEntries[i].range.getLength();
+                    const auto start = std::min(rightZoneRanges[i].from, rightZoneRanges[i].to);
                     rightSdrZoneProcs[i].processRegion(colors.data() + start, hdrRightCache.data(), sampleWidth, height, 0, sampleWidth);
-                    if (rightZoneEntries[i].reversed)
-                        std::reverse(colors.data() + start, colors.data() + start + len);
                 }
             }
         }
@@ -285,12 +261,10 @@ private:
     HdrVerticalRegionProcessor<CPP> leftHdrProcessor;
     HdrVerticalRegionProcessor<CPP> rightHdrProcessor;
 
-    struct ZoneEntry { LedRange range; bool reversed; };
-
-    std::vector<ZoneEntry> topZoneEntries;
-    std::vector<ZoneEntry> bottomZoneEntries;
-    std::vector<ZoneEntry> leftZoneEntries;
-    std::vector<ZoneEntry> rightZoneEntries;
+    std::vector<LedRange> topZoneRanges;
+    std::vector<LedRange> bottomZoneRanges;
+    std::vector<LedRange> leftZoneRanges;
+    std::vector<LedRange> rightZoneRanges;
 
     std::vector<SdrHorizontalRegionProcessor<CPP>> topSdrZoneProcs;
     std::vector<SdrHorizontalRegionProcessor<CPP>> bottomSdrZoneProcs;

@@ -1,3 +1,7 @@
+# [4.0.2]
+
+* Fixed reversed zone parts mirroring colors with smooth transitions.
+
 # [4.0.1]
 
 * Fix not shutting down in some situations. 

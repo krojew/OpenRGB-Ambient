@@ -1,13 +1,9 @@
-//
-// Created by Kamil Rojewski on 15.07.2021.
-//
-
 #ifndef OPENRGB_AMBIENT_DEVICELIST_H
 #define OPENRGB_AMBIENT_DEVICELIST_H
 
 #include <QWidget>
 
-class ResourceManagerInterface;
+class OpenRGBPluginAPIInterface;
 class QListWidgetItem;
 class QListWidget;
 class Settings;
@@ -18,7 +14,7 @@ class DeviceList
     Q_OBJECT
 
 public:
-    DeviceList(ResourceManagerInterface *resourceManager, Settings &settings, QWidget *parent = nullptr);
+    DeviceList(OpenRGBPluginAPIInterface *pluginInterface, Settings &settings, QWidget *parent = nullptr);
     ~DeviceList() override = default;
 
 signals:
@@ -31,7 +27,7 @@ private slots:
     void onItemChanged(QListWidgetItem *item) const;
 
 private:
-    ResourceManagerInterface *resourceManager;
+    OpenRGBPluginAPIInterface *pluginInterface;
     Settings &settings;
     QListWidget *deviceList;
 };

@@ -1,7 +1,3 @@
-//
-// Created by Kamil Rojewski on 15.07.2021.
-//
-
 #ifndef OPENRGB_AMBIENT_RELEASEWRAPPER_H
 #define OPENRGB_AMBIENT_RELEASEWRAPPER_H
 

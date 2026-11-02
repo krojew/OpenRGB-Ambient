@@ -1,7 +1,3 @@
-//
-// Created by Kamil Rojewski on 15.07.2021.
-//
-
 #include "ColorConversion.h"
 
 #include "Settings.h"

@@ -1,11 +1,4 @@
-//
-// Created by Kamil Rojewski on 15.07.2021.
-//
-
 #include <chrono>
-
-#include <QCoreApplication>
-#include <QImage>
 
 #include <windows.h>
 
@@ -16,27 +9,42 @@
 #include "ScreenCapture.h"
 #include "SettingsTab.h"
 #include "Limiter.h"
+#include "PluginMetadata.h"
 
 #include "OpenRGBAmbientPlugin.h"
+
+#include <ResourceManagerCallback.h>
 
 using namespace std::chrono_literals;
 
 const TCHAR *OpenRGBAmbientPlugin::END_SESSION_WND_CLASS = TEXT("OpenRGBAmbientPlugin");
 
-LRESULT CALLBACK EndSessionWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+namespace
 {
-    if (uMsg == WM_QUERYENDSESSION)
+    LRESULT CALLBACK EndSessionWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
-        const auto plugin = reinterpret_cast<OpenRGBAmbientPlugin *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-        if (plugin != nullptr)
-            plugin->turnOffLeds();
-    }
+        if (uMsg == WM_QUERYENDSESSION || uMsg == WM_ENDSESSION)
+        {
+            const auto plugin = reinterpret_cast<OpenRGBAmbientPlugin *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+            if (plugin != nullptr)
+            {
+                // A critical shutdown skips the query phase entirely and only sends WM_ENDSESSION, so
+                // both messages have to turn the LEDs off. WM_ENDSESSION with wParam FALSE means the
+                // session end was cancelled and the machine keeps running.
+                if (uMsg == WM_ENDSESSION && wParam == FALSE)
+                    plugin->resumeCapture();
+                else
+                    plugin->turnOffLeds();
+            }
+        }
 
-    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+        return DefWindowProc(hwnd, uMsg, wParam, lParam);
+    }
 }
 
 OpenRGBAmbientPlugin::~OpenRGBAmbientPlugin()
 {
+    destroyEndSessionWindow();
     stopCapture();
 }
 
@@ -54,11 +62,11 @@ bool OpenRGBAmbientPlugin::event(QEvent *event)
 OpenRGBPluginInfo OpenRGBAmbientPlugin::GetPluginInfo()
 {
     return {
-            "OpenRGBAmbientPlugin",
-            "Desktop ambient light support",
-            "3.0.3",
+            pluginName,
+            pluginDescription,
+            pluginVersion,
             "",
-            "https://github.com/krojew/OpenRGB-Ambient",
+            pluginUrl,
             {},
             OPENRGB_PLUGIN_LOCATION_TOP,
             "Ambient",
@@ -72,11 +80,11 @@ unsigned int OpenRGBAmbientPlugin::GetPluginAPIVersion()
     return OPENRGB_PLUGIN_API_VERSION;
 }
 
-void OpenRGBAmbientPlugin::Load(ResourceManagerInterface *resource_manager_ptr)
+void OpenRGBAmbientPlugin::Load(OpenRGBPluginAPIInterface* plugin_api_ptr)
 {
-    resourceManager = resource_manager_ptr;
+    pluginApiPtr = plugin_api_ptr;
 
-    settings = new Settings{QString::fromStdString((resourceManager->GetConfigurationDirectory() / "OpenRGBAmbientPlugin.ini").string()), this};
+    settings = new Settings{QString::fromStdString((pluginApiPtr->GetConfigurationDirectory() / "OpenRGBAmbientPlugin.ini").string()), this};
     debounceTimer = new QTimer{this};
     debounceTimer->setSingleShot(true);
     debounceTimer->setInterval(150);
@@ -94,20 +102,16 @@ void OpenRGBAmbientPlugin::Load(ResourceManagerInterface *resource_manager_ptr)
     wx.lpszClassName = END_SESSION_WND_CLASS;
     RegisterClassEx(&wx);
 
-    const auto hwnd = CreateWindowEx(0, END_SESSION_WND_CLASS, TEXT(""), 0, 0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr);
-    SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
-
-    resourceManager->RegisterDeviceListChangeCallback([](auto widget) {
-        const auto realSettings = static_cast<Settings *>(widget);
-        QMetaObject::invokeMethod(realSettings, &Settings::settingsChanged, Qt::QueuedConnection);
-    }, settings);
+    endSessionWindow = CreateWindowEx(0, END_SESSION_WND_CLASS, TEXT(""), 0, 0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr);
+    if (endSessionWindow != nullptr)
+        SetWindowLongPtr(endSessionWindow, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
     updateProcessors();
 }
 
 QWidget *OpenRGBAmbientPlugin::GetWidget()
 {
-    const auto ui = new SettingsTab{resourceManager, *settings};
+    const auto ui = new SettingsTab{pluginApiPtr, *settings};
     connect(this, &OpenRGBAmbientPlugin::previewUpdated, ui, &SettingsTab::updatePreview);
     connect(this, &OpenRGBAmbientPlugin::ledColorsUpdated, ui, &SettingsTab::updateLedColors);
     connect(ui, &SettingsTab::previewChanged, this, &OpenRGBAmbientPlugin::setPreview);
@@ -120,9 +124,6 @@ QWidget *OpenRGBAmbientPlugin::GetWidget()
         QMetaObject::invokeMethod(list, &SettingsTab::controllerListChanged, Qt::QueuedConnection);
     };
 
-    resourceManager->RegisterDeviceListChangeCallback(refreshList, ui);
-    resourceManager->RegisterDetectionEndCallback(refreshList, ui);
-
     return ui;
 }
 
@@ -134,6 +135,42 @@ QMenu *OpenRGBAmbientPlugin::GetTrayMenu()
 void OpenRGBAmbientPlugin::Unload()
 {
     turnOffLeds();
+    destroyEndSessionWindow();
+}
+
+void OpenRGBAmbientPlugin::ResourceManagerUpdated(unsigned update_reason)
+{
+    if (update_reason == RESOURCEMANAGER_UPDATE_REASON_DEVICE_LIST_UPDATED || update_reason ==
+        RESOURCEMANAGER_UPDATE_REASON_DETECTION_COMPLETE)
+    {
+        QMetaObject::invokeMethod(settings, &Settings::settingsChanged, Qt::QueuedConnection);
+    }
+}
+
+void OpenRGBAmbientPlugin::OnProfileAboutToLoad()
+{
+}
+
+void OpenRGBAmbientPlugin::OnProfileLoad(nlohmann::json profile_data)
+{
+}
+
+nlohmann::json OpenRGBAmbientPlugin::OnProfileSave()
+{
+    return {};
+}
+
+unsigned char* OpenRGBAmbientPlugin::OnSDKCommand(unsigned pkt_id, unsigned char* pkt_data, unsigned* pkt_size)
+{
+    return nullptr;
+}
+
+void OpenRGBAmbientPlugin::ProfileManagerUpdated(unsigned update_reason)
+{
+}
+
+void OpenRGBAmbientPlugin::SettingsManagerUpdated(unsigned update_reason)
+{
 }
 
 void OpenRGBAmbientPlugin::setPreview(bool enabled)
@@ -148,6 +185,11 @@ void OpenRGBAmbientPlugin::setPauseCapture(bool enabled)
 
 void OpenRGBAmbientPlugin::updateProcessors()
 {
+    // A device list update can arrive while the session is ending; rebuilding here would restart
+    // capture after the LEDs have already been blacked out.
+    if (ledsOff.load(std::memory_order::relaxed))
+        return;
+
     stopCapture();
 
     processors.clear();
@@ -178,10 +220,10 @@ void OpenRGBAmbientPlugin::updateProcessors()
     const bool hasBrightness = settings->brightnessEnabled() && settings->brightness() < 1.0f;
     const float brightnessVal = settings->brightness();
 
-    const auto &controllers = resourceManager->GetRGBControllers();
+    const auto &controllers = pluginApiPtr->GetRGBControllers();
     for (const auto controller : controllers)
     {
-        if (!settings->isControllerSelected(controller->location))
+        if (!settings->isControllerSelected(controller->GetLocation()))
             continue;
 
         auto makeProcessor = [&](auto cpp) {
@@ -239,27 +281,55 @@ void OpenRGBAmbientPlugin::stopCapture()
     }
 }
 
+void OpenRGBAmbientPlugin::resumeCapture()
+{
+    if (!ledsOff.exchange(false))
+        return;
+
+    updateProcessors();
+}
+
+void OpenRGBAmbientPlugin::destroyEndSessionWindow()
+{
+    if (endSessionWindow != nullptr)
+    {
+        SetWindowLongPtr(endSessionWindow, GWLP_USERDATA, 0);
+        DestroyWindow(endSessionWindow);
+        endSessionWindow = nullptr;
+    }
+
+    // The window procedure lives in this module, so the class must not outlive it.
+    UnregisterClass(END_SESSION_WND_CLASS, GetModuleHandle(nullptr));
+}
+
 void OpenRGBAmbientPlugin::turnOffLeds()
 {
-    // since this method can be called from various places and resourceManager might be gone, there's a need to guard
-    // from nullptr access
-    if (stopFlag.load(std::memory_order::relaxed))
+    // This can be reached after the plugin API is gone, so guard against nullptr access.
+    if (pluginApiPtr == nullptr || settings == nullptr)
+        return;
+
+    // Latch before writing black. Capture posts LED updates to the event loop, and the ones already
+    // queued when the capture thread stops would otherwise be delivered afterwards and light the LEDs
+    // back up. The latch also makes repeated shutdown notifications cheap.
+    if (ledsOff.exchange(true))
         return;
 
     stopCapture();
 
-    const auto &controllers = resourceManager->GetRGBControllers();
+    const auto &controllers = pluginApiPtr->GetRGBControllers();
     for (const auto controller : controllers)
     {
-        if (settings->isControllerSelected(controller->location))
+        if (settings->isControllerSelected(controller->GetLocation()))
         {
-            controller->SetAllLEDs(0);
+            controller->SetAllColors(0);
             controller->UpdateLEDs();
         }
     }
 
-    // give some time for async update
-    std::this_thread::sleep_for(300ms);
+    // UpdateLEDs only raises a flag that the controller's own update thread polls on a 1 ms sleep,
+    // which Windows' default timer granularity rounds up to roughly 16 ms. Allow a margin for the
+    // write to be picked up before the process goes away.
+    std::this_thread::sleep_for(100ms);
 }
 
 void OpenRGBAmbientPlugin::processImage(const std::shared_ptr<ID3D11Texture2D> &image)
@@ -342,11 +412,14 @@ void OpenRGBAmbientPlugin::processImage(const std::shared_ptr<ID3D11Texture2D> &
 
 void OpenRGBAmbientPlugin::processUpdate(const LedUpdateEvent &event)
 {
+    if (ledsOff.load(std::memory_order::relaxed))
+        return;
+
     const auto &location = event.getControllerLocation();
 
-    const auto &controllers = resourceManager->GetRGBControllers();
-    const auto controller = std::find_if(std::begin(controllers), std::end(controllers), [&](auto controller) {
-        return controller->location == location;
+    const auto &controllers = pluginApiPtr->GetRGBControllers();
+    const auto controller = std::ranges::find_if(controllers, [&](auto controller) {
+        return controller->GetLocation() == location;
     });
 
     if (controller != std::end(controllers))
@@ -355,11 +428,11 @@ void OpenRGBAmbientPlugin::processUpdate(const LedUpdateEvent &event)
 
         if (settings->getMappingMode(location) == MappingMode::Standard)
         {
-            auto writeRange = [&](const LedRange &range) {
+            const auto writeRange = [&](const LedRange &range) {
                 const int lo = std::min(range.from, range.to);
                 const int hi = std::max(range.from, range.to);
                 for (int i = lo; i < hi && i < static_cast<int>(colors.size()); ++i)
-                    (*controller)->SetLED(i, colors[i]);
+                    (*controller)->SetColor(i, colors[i]);
             };
             writeRange(settings->getTopRegion(location));
             writeRange(settings->getBottomRegion(location));
@@ -368,8 +441,10 @@ void OpenRGBAmbientPlugin::processUpdate(const LedUpdateEvent &event)
         }
         else
         {
-            for (const auto &zone : (*controller)->zones)
+            const auto zoneCount = (*controller)->GetZoneCount();
+            for (auto i = 0u; i < zoneCount; ++i)
             {
+                const auto zone = (*controller)->GetZone(i);
                 if (!settings->isZoneEnabled(location, zone.name))
                     continue;
 
@@ -382,8 +457,8 @@ void OpenRGBAmbientPlugin::processUpdate(const LedUpdateEvent &event)
                     const int absTo   = static_cast<int>(zone.start_idx) + part.to;
                     const int lo      = std::min(absFrom, absTo);
                     const int hi      = std::max(absFrom, absTo);
-                    for (int i = lo; i < hi && i < static_cast<int>(colors.size()); ++i)
-                        (*controller)->SetLED(i, colors[i]);
+                    for (int j = lo; j < hi && j < static_cast<int>(colors.size()); ++j)
+                        (*controller)->SetColor(j, colors[j]);
                 }
             }
         }
@@ -395,15 +470,20 @@ void OpenRGBAmbientPlugin::processUpdate(const LedUpdateEvent &event)
 }
 
 template<ColorPostProcessor CPP>
-std::unique_ptr<ImageProcessorBase> OpenRGBAmbientPlugin::createProcessor(RGBController *controller, std::array<float, 3> colorFactors, CPP colorPostProcessor)
+std::unique_ptr<ImageProcessorBase> OpenRGBAmbientPlugin::createProcessor(
+    RGBControllerInterface* controller, std::array<float, 3> colorFactors, CPP colorPostProcessor)
 {
+    const auto location = controller->GetLocation();
+    const auto zoneCount = controller->GetZoneCount();
+
     std::vector<ZoneLedRange> zoneMappings;
-    for (const auto &zone : controller->zones)
+    for (auto i = 0u; i < zoneCount; ++i)
     {
-        if (!settings->isZoneEnabled(controller->location, zone.name))
+        const auto zone = controller->GetZone(i);
+        if (!settings->isZoneEnabled(location, zone.name))
             continue;
 
-        const auto parts = settings->getZoneParts(controller->location, zone.name);
+        const auto parts = settings->getZoneParts(location, zone.name);
         for (const auto &part : parts)
         {
             if (part.region == ScreenRegion::None)
@@ -415,16 +495,16 @@ std::unique_ptr<ImageProcessorBase> OpenRGBAmbientPlugin::createProcessor(RGBCon
     }
 
     return std::make_unique<ImageProcessor<CPP>>(
-            controller->location,
-            static_cast<int>(controller->leds.size()),
-            settings->getTopRegion(controller->location),
-            settings->getBottomRegion(controller->location),
-            settings->getRightRegion(controller->location),
-            settings->getLeftRegion(controller->location),
+            location,
+            static_cast<int>(controller->GetLEDCount()),
+            settings->getTopRegion(location),
+            settings->getBottomRegion(location),
+            settings->getRightRegion(location),
+            settings->getLeftRegion(location),
             std::move(zoneMappings),
             colorFactors,
             colorPostProcessor,
-            settings->getMappingMode(controller->location) == MappingMode::Zone,
+            settings->getMappingMode(location) == MappingMode::Zone,
             this
     );
 }

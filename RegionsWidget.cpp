@@ -1,15 +1,9 @@
-//
-// Created by Kamil Rojewski on 15.07.2021.
-//
-
 #include <algorithm>
 
 #include <QFormLayout>
-#include <QLabel>
 #include <QComboBox>
 #include <QCheckBox>
 #include <QHBoxLayout>
-#include <QVBoxLayout>
 #include <QRadioButton>
 #include <QSpinBox>
 #include <QPushButton>
@@ -22,11 +16,11 @@
 
 #include "RegionsWidget.h"
 
-#include <RGBController.h>
+#include <OpenRGBPluginInterface.h>
 
-RegionsWidget::RegionsWidget(ResourceManagerInterface *resourceManager, Settings &settings, QWidget *parent)
+RegionsWidget::RegionsWidget(OpenRGBPluginAPIInterface *pluginInterface, Settings &settings, QWidget *parent)
     : QWidget{parent}
-    , resourceManager{resourceManager}
+    , pluginInterface{pluginInterface}
     , settings{settings}
 {
     const auto mainLayout = new QVBoxLayout{this};
@@ -47,7 +41,7 @@ RegionsWidget::RegionsWidget(ResourceManagerInterface *resourceManager, Settings
     const auto standardLayout = new QFormLayout{standardContainer};
 
     top = new RegionWidget{};
-    connect(top, &RegionWidget::regionChanged, this, [=](auto from, auto to) {
+    connect(top, &RegionWidget::regionChanged, this, [this](auto from, auto to) {
         if (!currentLocation.empty())
         {
             this->settings.setTopRegion(currentLocation, {from, to});
@@ -55,14 +49,14 @@ RegionsWidget::RegionsWidget(ResourceManagerInterface *resourceManager, Settings
                 showCurrentLeds(from, to);
         }
     });
-    connect(top, &RegionWidget::adjustmentFinished, this, [=]() {
+    connect(top, &RegionWidget::adjustmentFinished, this, [this]() {
         if (!preview)
             clearCurrentLeds();
     });
     standardLayout->addRow("Top", top);
 
     bottom = new RegionWidget{};
-    connect(bottom, &RegionWidget::regionChanged, this, [=](auto from, auto to) {
+    connect(bottom, &RegionWidget::regionChanged, this, [this](auto from, auto to) {
         if (!currentLocation.empty())
         {
             this->settings.setBottomRegion(currentLocation, {from, to});
@@ -70,14 +64,14 @@ RegionsWidget::RegionsWidget(ResourceManagerInterface *resourceManager, Settings
                 showCurrentLeds(from, to);
         }
     });
-    connect(bottom, &RegionWidget::adjustmentFinished, this, [=]() {
+    connect(bottom, &RegionWidget::adjustmentFinished, this, [this]() {
         if (!preview)
             clearCurrentLeds();
     });
     standardLayout->addRow("Bottom", bottom);
 
     right = new RegionWidget{};
-    connect(right, &RegionWidget::regionChanged, this, [=](auto from, auto to) {
+    connect(right, &RegionWidget::regionChanged, this, [this](auto from, auto to) {
         if (!currentLocation.empty())
         {
             this->settings.setRightRegion(currentLocation, {from, to});
@@ -85,14 +79,14 @@ RegionsWidget::RegionsWidget(ResourceManagerInterface *resourceManager, Settings
                 showCurrentLeds(from, to);
         }
     });
-    connect(right, &RegionWidget::adjustmentFinished, this, [=]() {
+    connect(right, &RegionWidget::adjustmentFinished, this, [this]() {
         if (!preview)
             clearCurrentLeds();
     });
     standardLayout->addRow("Right", right);
 
     left = new RegionWidget{};
-    connect(left, &RegionWidget::regionChanged, this, [=](auto from, auto to) {
+    connect(left, &RegionWidget::regionChanged, this, [this](auto from, auto to) {
         if (!currentLocation.empty())
         {
             this->settings.setLeftRegion(currentLocation, {from, to});
@@ -100,7 +94,7 @@ RegionsWidget::RegionsWidget(ResourceManagerInterface *resourceManager, Settings
                 showCurrentLeds(from, to);
         }
     });
-    connect(left, &RegionWidget::adjustmentFinished, this, [=]() {
+    connect(left, &RegionWidget::adjustmentFinished, this, [this]() {
         if (!preview)
             clearCurrentLeds();
     });
@@ -134,9 +128,9 @@ void RegionsWidget::selectController(const QString &location)
 {
     currentLocation = location.toStdString();
 
-    const auto &controllers = resourceManager->GetRGBControllers();
-    const auto controller = std::find_if(std::begin(controllers), std::end(controllers), [&](auto controller) {
-        return controller->location == currentLocation;
+    const auto &controllers = pluginInterface->GetRGBControllers();
+    const auto controller = std::ranges::find_if(controllers, [&](auto c) {
+        return c->GetLocation() == currentLocation;
     });
 
     // Restore mapping mode for this controller without triggering a settings write
@@ -166,7 +160,7 @@ void RegionsWidget::selectController(const QString &location)
     const auto rightRange = settings.getRightRegion(currentLocation);
     const auto leftRange = settings.getLeftRegion(currentLocation);
 
-    const auto max = static_cast<int>((*controller)->leds.size()) + 1;
+    const auto max = static_cast<int>((*controller)->GetLEDCount()) + 1;
 
     top->setConfiguration(max, topRange.from, topRange.to);
     bottom->setConfiguration(max, bottomRange.from, bottomRange.to);
@@ -178,9 +172,9 @@ void RegionsWidget::selectController(const QString &location)
 
 void RegionsWidget::showCurrentLeds(int from, int to)
 {
-    const auto &controllers = resourceManager->GetRGBControllers();
+    const auto &controllers = pluginInterface->GetRGBControllers();
     const auto controller = std::ranges::find_if(controllers, [&](auto controller) {
-        return controller->location == currentLocation;
+        return controller->GetLocation() == currentLocation;
     });
 
     if (controller == std::end(controllers))
@@ -189,34 +183,31 @@ void RegionsWidget::showCurrentLeds(int from, int to)
     const auto realFrom = std::min(from, to);
     const auto realTo = std::max(from, to);
 
-    const auto len = (*controller)->leds.size();
+    const auto len = (*controller)->GetLEDCount();
 
     for (auto i = 0; i < realFrom; ++i)
-        (*controller)->SetLED(i, 0);
+        (*controller)->SetColor(i, 0);
 
     for (auto i = realFrom; i < realTo; ++i)
-        (*controller)->SetLED(i, ToRGBColor(255, 255, 255));
+        (*controller)->SetColor(i, ToRGBColor(255, 255, 255));
 
     for (auto i = realTo; i < len; ++i)
-        (*controller)->SetLED(i, 0);
+        (*controller)->SetColor(i, 0);
 
     (*controller)->UpdateLEDs();
 }
 
 void RegionsWidget::clearCurrentLeds()
 {
-    const auto &controllers = resourceManager->GetRGBControllers();
+    const auto &controllers = pluginInterface->GetRGBControllers();
     const auto controller = std::ranges::find_if(controllers, [&](auto controller) {
-        return controller->location == currentLocation;
+        return controller->GetLocation() == currentLocation;
     });
 
     if (controller == std::end(controllers))
         return;
 
-    const auto len = (*controller)->leds.size();
-    for (auto i = 0; i < len; ++i)
-        (*controller)->SetLED(i, 0);
-
+    (*controller)->SetAllColors(0);
     (*controller)->UpdateLEDs();
 }
 
@@ -233,9 +224,9 @@ void RegionsWidget::rebuildZoneRows()
     if (currentLocation.empty())
         return;
 
-    const auto &controllers = resourceManager->GetRGBControllers();
+    const auto &controllers = pluginInterface->GetRGBControllers();
     const auto controllerIt = std::ranges::find_if(controllers, [&](auto c) {
-        return c->location == currentLocation;
+        return c->GetLocation() == currentLocation;
     });
 
     if (controllerIt == std::end(controllers))
@@ -245,8 +236,11 @@ void RegionsWidget::rebuildZoneRows()
 
     const auto loc = currentLocation;
 
-    for (const auto &zone : (*controllerIt)->zones)
+    const auto zoneCount = (*controllerIt)->GetZoneCount();
+    for (auto i = 0u; i < zoneCount; ++i)
     {
+        const auto zone = (*controllerIt)->GetZone(i);
+
         const auto zoneName  = zone.name;
         const auto maxLeds   = static_cast<int>(zone.leds_count);
         const auto segsCopy  = zone.segments;

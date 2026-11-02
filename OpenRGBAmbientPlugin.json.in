@@ -1,0 +1,7 @@
+{
+    "OpenRGBPluginAPIVersion": @PLUGIN_API_VERSION@,
+    "Id": "@PLUGIN_ID@",
+    "Name": "@PLUGIN_NAME@",
+    "VersionStr": "@PLUGIN_VERSION@",
+    "Url": "@PLUGIN_URL@"
+}

@@ -1,5 +1,3 @@
-//
-
 #ifndef OPENRGB_AMBIENT_LEDPREVIEWWIDGET_H
 #define OPENRGB_AMBIENT_LEDPREVIEWWIDGET_H
 
@@ -14,7 +12,7 @@
 
 #include "ZoneMapping.h"
 
-class ResourceManagerInterface;
+class OpenRGBPluginAPIInterface;
 class Settings;
 class QPaintEvent;
 
@@ -23,7 +21,7 @@ class LedPreviewWidget : public QWidget
     Q_OBJECT
 
 public:
-    LedPreviewWidget(ResourceManagerInterface *resourceManager, Settings &settings, QWidget *parent = nullptr);
+    LedPreviewWidget(OpenRGBPluginAPIInterface *pluginInterface, Settings &settings, QWidget *parent = nullptr);
     ~LedPreviewWidget() override = default;
 
 public slots:
@@ -36,7 +34,7 @@ protected:
 private:
     static constexpr int EDGE = 14; // px for each LED strip border
 
-    ResourceManagerInterface *resourceManager;
+    OpenRGBPluginAPIInterface *pluginInterface;
     Settings &settings;
 
     QImage currentFrame;

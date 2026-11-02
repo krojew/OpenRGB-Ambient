@@ -1,23 +1,21 @@
-//
-// Created by Kamil Rojewski on 15.07.2021.
-//
 #include <algorithm>
 
 #include <QHBoxLayout>
 #include <QListWidget>
 
 #include <ResourceManager.h>
-#include <RGBController.h>
 
 #include "Settings.h"
 
 #include "DeviceList.h"
 
+#include <OpenRGBPluginInterface.h>
+
 static constexpr int LOC_ROLE = Qt::UserRole;
 
-DeviceList::DeviceList(ResourceManagerInterface *resourceManager, Settings &settings, QWidget *parent)
+DeviceList::DeviceList(OpenRGBPluginAPIInterface *pluginInterface, Settings &settings, QWidget *parent)
     : QWidget{parent}
-    , resourceManager{resourceManager}
+    , pluginInterface{pluginInterface}
     , settings{settings}
 {
     const auto layout = new QHBoxLayout{this};
@@ -38,17 +36,29 @@ void DeviceList::fillControllerList() const
         const QSignalBlocker blocker{deviceList};
         deviceList->clear();
 
-        const auto &controllers = resourceManager->GetRGBControllers();
+        const auto &controllers = pluginInterface->GetRGBControllers();
         for (const auto controller : controllers)
         {
-            if (std::ranges::none_of(controller->modes, [](const auto &mode) {
-                return mode.name == "Direct";
-            }))
+            auto hasDirect = false;
+
+            const auto modeCount = controller->GetModeCount();
+            for (auto i = 0u; i < modeCount; ++i)
+            {
+                if (controller->GetModeName(i) == "Direct")
+                {
+                    hasDirect = true;
+                    break;
+                }
+            }
+
+            if (!hasDirect)
                 continue;
 
-            const auto item = new QListWidgetItem{QString::fromStdString(controller->name)};
-            item->setData(LOC_ROLE, QString::fromStdString(controller->location));
-            item->setCheckState(settings.isControllerSelected(controller->location) ? Qt::Checked : Qt::Unchecked);
+            const auto location = controller->GetLocation();
+
+            const auto item = new QListWidgetItem{QString::fromStdString(controller->GetName())};
+            item->setData(LOC_ROLE, QString::fromStdString(location));
+            item->setCheckState(settings.isControllerSelected(location) ? Qt::Checked : Qt::Unchecked);
             deviceList->addItem(item);
         }
     }

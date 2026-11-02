@@ -17,10 +17,11 @@ template<ColorPostProcessor CPP>
 class SdrHorizontalRegionProcessor final
 {
 public:
-    SdrHorizontalRegionProcessor(int samples, std::array<float, 3> colorFactors, CPP colorPostProcessor)
+    SdrHorizontalRegionProcessor(int samples, std::array<float, 3> colorFactors, CPP colorPostProcessor, bool reversed = false)
             : samples{samples}
             , colorFactors(colorFactors)
             , colorPostProcessor{colorPostProcessor}
+            , reversed{reversed}
     {
     }
 
@@ -54,11 +55,13 @@ public:
             const float avgR = red   * colorFactors[0] / samplePixels;
             const float avgG = green * colorFactors[1] / samplePixels;
             const float avgB = blue  * colorFactors[2] / samplePixels;
-            result[samples - sample - 1] = colorPostProcessor.process(
+            // result doubles as the previous frame for the post-processor, so each sample must keep a fixed LED index
+            const auto index = reversed ? sample : samples - sample - 1;
+            result[index] = colorPostProcessor.process(
                     static_cast<uchar>(std::clamp(avgR, 0.0f, 255.0f)),
                     static_cast<uchar>(std::clamp(avgG, 0.0f, 255.0f)),
                     static_cast<uchar>(std::clamp(avgB, 0.0f, 255.0f)),
-                    result[samples - sample - 1]
+                    result[index]
             );
         }
     }
@@ -67,6 +70,7 @@ private:
     int samples = 0;
     std::array<float, 3> colorFactors;
     CPP colorPostProcessor;
+    bool reversed = false;
 };
 
 #endif //OPENRGB_AMBIENT_SDRHORIZONTALREGIONPROCESSOR_H

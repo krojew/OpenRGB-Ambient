@@ -10,9 +10,11 @@
 #include "Settings.h"
 #include "LedPreviewWidget.h"
 
-LedPreviewWidget::LedPreviewWidget(ResourceManagerInterface *resourceManager, Settings &settings, QWidget *parent)
+#include <OpenRGBPluginInterface.h>
+
+LedPreviewWidget::LedPreviewWidget(OpenRGBPluginAPIInterface *pluginInterface, Settings &settings, QWidget *parent)
     : QWidget{parent}
-    , resourceManager{resourceManager}
+    , pluginInterface{pluginInterface}
     , settings{settings}
 {
     setFixedWidth(320);
@@ -41,26 +43,27 @@ std::vector<QColor> LedPreviewWidget::collectRegionColors(ScreenRegion region) c
 {
     std::vector<QColor> result;
 
-    for (const auto *controller : resourceManager->GetRGBControllers())
+    for (const auto controller : pluginInterface->GetRGBControllers())
     {
-        if (!settings.isControllerSelected(controller->location))
+        const auto location = controller->GetLocation();
+        if (!settings.isControllerSelected(location))
             continue;
 
-        const auto it = deviceColors.find(controller->location);
+        const auto it = deviceColors.find(location);
         if (it == deviceColors.end())
             continue;
 
         const auto &colors = it->second;
 
-        if (settings.getMappingMode(controller->location) == MappingMode::Standard)
+        if (settings.getMappingMode(location) == MappingMode::Standard)
         {
             LedRange range;
             switch (region)
             {
-                case ScreenRegion::Top:    range = settings.getTopRegion(controller->location);    break;
-                case ScreenRegion::Bottom: range = settings.getBottomRegion(controller->location); break;
-                case ScreenRegion::Left:   range = settings.getLeftRegion(controller->location);   break;
-                case ScreenRegion::Right:  range = settings.getRightRegion(controller->location);  break;
+                case ScreenRegion::Top:    range = settings.getTopRegion(location);    break;
+                case ScreenRegion::Bottom: range = settings.getBottomRegion(location); break;
+                case ScreenRegion::Left:   range = settings.getLeftRegion(location);   break;
+                case ScreenRegion::Right:  range = settings.getRightRegion(location);  break;
                 default: continue;
             }
 
@@ -78,12 +81,14 @@ std::vector<QColor> LedPreviewWidget::collectRegionColors(ScreenRegion region) c
         }
         else
         {
-            for (const auto &zone : controller->zones)
+            const auto zoneCount = controller->GetZoneCount();
+            for (auto i = 0u; i < zoneCount; ++i)
             {
-                if (!settings.isZoneEnabled(controller->location, zone.name))
+                const auto zone = controller->GetZone(i);
+                if (!settings.isZoneEnabled(location, zone.name))
                     continue;
 
-                const auto parts = settings.getZoneParts(controller->location, zone.name);
+                const auto parts = settings.getZoneParts(location, zone.name);
                 for (const auto &part : parts)
                 {
                     if (part.region != region)

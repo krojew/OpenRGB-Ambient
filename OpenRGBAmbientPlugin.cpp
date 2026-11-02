@@ -262,6 +262,7 @@ void OpenRGBAmbientPlugin::startCapture()
     const auto adapterIdx = static_cast<UINT>(settings->monitorAdapter());
     const auto outputIdx  = settings->monitorOutput();
     captureThread = std::thread([=] {
+        while (!stopFlag.load())
         try
         {
             ScreenCapture capture{adapterIdx, outputIdx};
@@ -283,6 +284,7 @@ void OpenRGBAmbientPlugin::startCapture()
         }
         catch (const std::exception &)
         {
+            std::this_thread::sleep_for(1s);
         }
     });
 }

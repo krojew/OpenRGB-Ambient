@@ -134,6 +134,9 @@ QMenu *OpenRGBAmbientPlugin::GetTrayMenu()
 
 void OpenRGBAmbientPlugin::Unload()
 {
+    for (const auto controller : pluginApiPtr->GetRGBControllers())
+        controller->UnregisterUpdateCallback(settings);
+
     turnOffLeds();
     destroyEndSessionWindow();
 }
@@ -225,6 +228,12 @@ void OpenRGBAmbientPlugin::updateProcessors()
     {
         if (!settings->isControllerSelected(controller->GetLocation()))
             continue;
+
+        // Zone resizes are only signalled to the controller's own callbacks, not to plugins.
+        controller->RegisterUpdateCallback([](void *settings, unsigned int reason, void *) {
+            if (reason == RGBCONTROLLER_UPDATE_REASON_CONFIGUREZONE || reason == RGBCONTROLLER_UPDATE_REASON_CONFIGUREDEVICE)
+                QMetaObject::invokeMethod(static_cast<Settings *>(settings), &Settings::settingsChanged, Qt::QueuedConnection);
+        }, settings);
 
         auto makeProcessor = [&](auto cpp) {
             if (hasBrightness)
@@ -481,6 +490,7 @@ std::unique_ptr<ImageProcessorBase> OpenRGBAmbientPlugin::createProcessor(
 {
     const auto location = controller->GetLocation();
     const auto zoneCount = controller->GetZoneCount();
+    const auto ledCount = static_cast<int>(controller->GetLEDCount());
 
     std::vector<ZoneLedRange> zoneMappings;
     for (auto i = 0u; i < zoneCount; ++i)
@@ -494,19 +504,20 @@ std::unique_ptr<ImageProcessorBase> OpenRGBAmbientPlugin::createProcessor(
         {
             if (part.region == ScreenRegion::None)
                 continue;
-            const auto absFrom = static_cast<int>(zone.start_idx) + part.from;
-            const auto absTo   = static_cast<int>(zone.start_idx) + part.to;
-            zoneMappings.push_back({{absFrom, absTo}, part.region, part.reversed});
+            const auto local = LedRange{part.from, part.to}.clampedTo(static_cast<int>(zone.leds_count));
+            const auto absFrom = static_cast<int>(zone.start_idx) + local.from;
+            const auto absTo   = static_cast<int>(zone.start_idx) + local.to;
+            zoneMappings.push_back({LedRange{absFrom, absTo}.clampedTo(ledCount), part.region, part.reversed});
         }
     }
 
     return std::make_unique<ImageProcessor<CPP>>(
             location,
-            static_cast<int>(controller->GetLEDCount()),
-            settings->getTopRegion(location),
-            settings->getBottomRegion(location),
-            settings->getRightRegion(location),
-            settings->getLeftRegion(location),
+            ledCount,
+            settings->getTopRegion(location).clampedTo(ledCount),
+            settings->getBottomRegion(location).clampedTo(ledCount),
+            settings->getRightRegion(location).clampedTo(ledCount),
+            settings->getLeftRegion(location).clampedTo(ledCount),
             std::move(zoneMappings),
             colorFactors,
             colorPostProcessor,

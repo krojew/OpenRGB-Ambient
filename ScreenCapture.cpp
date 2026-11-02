@@ -160,8 +160,7 @@ bool ScreenCapture::grabContent()
     {
         if (!initDuplicator())
         {
-            if (image)
-                return true;
+            return static_cast<bool>(image);
         }
     }
 
@@ -172,8 +171,16 @@ bool ScreenCapture::grabContent()
     auto hr = duplicator->AcquireNextFrame(10, &info, &res);
     if (hr == DXGI_ERROR_ACCESS_LOST)
     {
-        initDuplicator();
-        return grabContent();
+        try
+        {
+            initDuplicator();
+        }
+        catch (const std::exception &)
+        {
+            duplicator.reset();
+        }
+
+        return static_cast<bool>(image);
     }
 
     if (hr == DXGI_ERROR_WAIT_TIMEOUT)

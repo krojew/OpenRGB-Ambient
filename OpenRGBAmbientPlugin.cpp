@@ -253,21 +253,27 @@ void OpenRGBAmbientPlugin::startCapture()
     const auto adapterIdx = static_cast<UINT>(settings->monitorAdapter());
     const auto outputIdx  = settings->monitorOutput();
     captureThread = std::thread([=] {
-        ScreenCapture capture{adapterIdx, outputIdx};
-        Limiter limiter{60};
-
-        while (!stopFlag.load())
+        try
         {
-            limiter.sleep();
+            ScreenCapture capture{adapterIdx, outputIdx};
+            Limiter limiter{60};
 
-            if (!capture.grabContent())
+            while (!stopFlag.load())
             {
-                std::this_thread::sleep_for(1ms);
-                continue;
-            }
+                limiter.sleep();
 
-            const auto image = capture.getScreen();
-            processImage(image);
+                if (!capture.grabContent())
+                {
+                    std::this_thread::sleep_for(1ms);
+                    continue;
+                }
+
+                const auto image = capture.getScreen();
+                processImage(image);
+            }
+        }
+        catch (const std::exception &)
+        {
         }
     });
 }

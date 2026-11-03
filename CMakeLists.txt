@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(openrgb_ambient VERSION 4.0.2)
+project(openrgb_ambient VERSION 4.0.3)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 20)

@@ -12,6 +12,7 @@
 /Testing
 /openrgb_ambient_autogen/
 /openrgb_ambient.sln
+/openrgb_ambient.slnx
 /openrgb_ambient.vcxproj*
 /ZERO_CHECK.vcxproj*
 /.ninja_log

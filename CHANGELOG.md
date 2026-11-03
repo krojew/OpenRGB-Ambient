@@ -1,3 +1,7 @@
+# [4.0.3]
+
+* OpenRGB 1.1 compatibility.
+
 # [4.0.2]
 
 * Fixed reversed zone parts mirroring colors with smooth transitions.

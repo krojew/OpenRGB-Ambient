@@ -57,6 +57,8 @@ void ScreenCapture::initAdapter()
     if (FAILED(CreateDXGIFactory1(__uuidof(IDXGIFactory1), reinterpret_cast<void **>(&pFactory))))
         throw std::runtime_error{"Failed to create DXGIFactory"};
 
+    const auto factoryHandle = releasing(pFactory);
+
     IDXGIAdapter1 *pAdapter = nullptr;
     UINT i = 0;
 
@@ -69,7 +71,7 @@ void ScreenCapture::initAdapter()
         if (i == adapterIndex)
         {
             adapter = releasing(pAdapter);
-            factory = releasing(pFactory);
+            factory = factoryHandle;
         }
         else
         {

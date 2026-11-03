@@ -56,7 +56,7 @@ endif()
 find_package(Qt${QT_VERSION} COMPONENTS ${REQUIRED_LIBS} REQUIRED)
 find_package(DirectX11)
 target_link_libraries(${PROJECT_NAME} ${REQUIRED_LIBS_QUALIFIED})
-target_include_directories(${PROJECT_NAME} PRIVATE OpenRGB OpenRGB/i2c_smbus OpenRGB/net_port OpenRGB/RGBController OpenRGB/dependencies/json OpenRGB/qt OpenRGB/hidapi_wrapper OpenRGB/SPDAccessor)
+target_include_directories(${PROJECT_NAME} PRIVATE OpenRGB OpenRGB/i2c_smbus OpenRGB/net_port OpenRGB/RGBController OpenRGB/dependencies/json OpenRGB/qt OpenRGB/hidapi_wrapper OpenRGB/SPDAccessor OpenRGB/serial_port)
 
 if (WIN32)
     target_link_libraries(${PROJECT_NAME} ${DirectX11_LIBRARY})

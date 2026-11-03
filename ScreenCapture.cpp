@@ -78,14 +78,19 @@ void ScreenCapture::initAdapter()
 
         ++i;
     }
+
+    if (!adapter)
+        throw std::runtime_error{"Adapter not found"};
 }
 
 void ScreenCapture::initOutput()
 {
     auto outputs = enumerateVideoOutputs();
     const auto idx = static_cast<size_t>(outputIndex);
-    if (idx < outputs.size())
-        adapterOutput = std::move(outputs[idx]);
+    if (idx >= outputs.size())
+        throw std::runtime_error{"Output not found"};
+
+    adapterOutput = std::move(outputs[idx]);
 }
 
 std::vector<std::shared_ptr<IDXGIOutput>> ScreenCapture::enumerateVideoOutputs()
@@ -160,8 +165,7 @@ bool ScreenCapture::grabContent()
     {
         if (!initDuplicator())
         {
-            if (image)
-                return true;
+            return static_cast<bool>(image);
         }
     }
 
@@ -172,8 +176,16 @@ bool ScreenCapture::grabContent()
     auto hr = duplicator->AcquireNextFrame(10, &info, &res);
     if (hr == DXGI_ERROR_ACCESS_LOST)
     {
-        initDuplicator();
-        return grabContent();
+        try
+        {
+            initDuplicator();
+        }
+        catch (const std::exception &)
+        {
+            duplicator.reset();
+        }
+
+        return static_cast<bool>(image);
     }
 
     if (hr == DXGI_ERROR_WAIT_TIMEOUT)

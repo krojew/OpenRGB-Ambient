@@ -5,6 +5,7 @@
 #ifndef OPENRGB_AMBIENT_LEDRANGE_H
 #define OPENRGB_AMBIENT_LEDRANGE_H
 
+#include <algorithm>
 #include <cmath>
 
 struct LedRange
@@ -20,8 +21,8 @@ struct LedRange
     // Saved ranges can exceed the current LED count, e.g. after a zone resize.
     inline LedRange clampedTo(int ledCount) const noexcept
     {
-        const auto clamp = [ledCount](int value) { const auto v = value > ledCount ? ledCount : value; return v < 0 ? 0 : v; };
-        return {clamp(from), clamp(to)};
+        const auto max = std::max(ledCount, 0);
+        return {std::clamp(from, 0, max), std::clamp(to, 0, max)};
     }
 };
 
